@@ -57,7 +57,6 @@ def get_client_personal_loads(token):
     return response
 
 
-
 def request_delivery(token, load_id, user_id):
     request = requests.post(
         DOMAIN + "/notifications/create/",
@@ -69,6 +68,24 @@ def request_delivery(token, load_id, user_id):
     return response
 
 
+def fetch_districts_details():
+    try:
+        # Make GET request to fetch districts details from backend
+        response = requests.get(DOMAIN + "/drivers/regions/")
+        if response.status_code == 200:
+            # Extract and return districts details from the response
+            return response.json()
+        else:
+            # Handle non-200 status code
+            print(
+                f"Failed to fetch districts details. Status code: {response.status_code}"
+            )
+            return None
+    except requests.RequestException as e:
+        # Handle request exception
+        print(f"Request to fetch districts details failed: {e}")
+        return None
+
 
 def get_all_loads_dispatcher(token):
     request = requests.get(
@@ -79,7 +96,8 @@ def get_all_loads_dispatcher(token):
     response = request.json()
     return response
 
-def show_all_drivers(token): 
+
+def show_all_drivers(token):
     request = requests.get(
         DOMAIN + "/dispatchers/drivers/",
         headers={"Authorization": f"Bearer {token}"},

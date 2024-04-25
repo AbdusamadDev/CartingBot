@@ -59,6 +59,9 @@ def driver_my_loads_buttons(indices):
     return keyboard
 
 
+n = [[InlineKeyboardButton("Click me to update label", callback_data="update_button")]]
+
+
 def get_driver_buttons(indices):
     keyboard = InlineKeyboardMarkup(row_width=1)
     for driver_id, fullname in indices:

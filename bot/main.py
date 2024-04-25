@@ -221,7 +221,6 @@ async def process_receiver_phone_number(message: types.Message, state: FSMContex
 
 
 
-
 @dp.callback_query_handler(
     lambda c: c.data in ["driver", "dispatcher", "client"],
     state=RegistrationState.role,
