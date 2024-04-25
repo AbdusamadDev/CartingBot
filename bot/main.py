@@ -3,13 +3,16 @@ from aiogram import executor, Bot, Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from client import register_user, verify_phonenumber
 from conf import TOKEN
+from client import *
+from buttons import *
+from database import *
 import logging
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot=bot, storage=MemoryStorage())
 auth_token = None
+create_table()
 
 
 class RegistrationState(StatesGroup):
@@ -20,17 +23,55 @@ class RegistrationState(StatesGroup):
     password = State()
 
 
+class TokenStorageState(StatesGroup):
+    token = State()
+
+
 @dp.message_handler(commands=["start"], state="*")
 async def start(message: types.Message, state: FSMContext):
-    await message.answer("Please provide your number:")
-    await RegistrationState.phonenumber.set()
+    token = get_user_by_telegram_id(message.from_user.id)
+    if token:
+        token = token[2]
+        print("asdadadasdasdasdasasdasd")
+        print(token)
+        # If token exists, request profile details
+        profile_details = get_profile_details(token)
+
+        if profile_details:
+            # If status code is 200, return profile details
+            if profile_details:
+                print("Profile details: ", profile_details)
+                await message.answer(
+                    f"Wassup Mr. User! Here are your profile details:\n{profile_details}",
+                    reply_markup=get_buttons_by_role(
+                        profile_details["detail"]["user"]["user_type"]
+                    ),
+                )
+            else:
+                await message.answer(
+                    "Welcome back! Please proceed with the registration process."
+                )
+                await RegistrationState.phonenumber.set()
+        else:
+            await message.answer(
+                "Failed to fetch profile details. Please proceed with the registration process."
+            )
+            await RegistrationState.phonenumber.set()
+    else:
+        await message.answer(
+            "Hi, let's create an account. Please enter your phone number:"
+        )
+        await RegistrationState.phonenumber.set()
 
 
 @dp.message_handler(state=RegistrationState.phonenumber)
 async def process_phonenumber(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["phonenumber"] = message.text
-    await message.answer("SMS code sent. Please enter the code.")
+    await message.answer(
+        f"SMS activation code sent to the phone number: {message.text}."
+        "Please enter the 4 digit code"
+    )
     await RegistrationState.sms_code.set()
 
 
@@ -43,7 +84,7 @@ async def process_sms_code(message: types.Message, state: FSMContext):
         phonenumber=context.get("phonenumber"), code=message.text
     )
     if ("sms_code_status" in response.keys()) and (response["sms_code_status"]):
-        await message.answer("Enter fullname, and response: {}".format(response))
+        await message.answer("Cool, now enter your fullname in this order: `John Doe`")
         await RegistrationState.fullname.set()
     else:
         await message.answer("SMS code is not valid")
@@ -53,6 +94,9 @@ async def process_sms_code(message: types.Message, state: FSMContext):
 @dp.message_handler(state=RegistrationState.fullname)
 async def process_fullname(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
+        if len(message.text.split(" ")) != 2:
+            await message.answer("Please enter your fullname in this order: `John Doe`")
+            await RegistrationState.fullname.set()
         data["fullname"] = message.text
     await message.answer("Please enter your password:")
     await RegistrationState.password.set()
@@ -63,41 +107,98 @@ async def process_password(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["password"] = message.text
     await message.delete()
-
-    # Inline keyboard markup with three buttons
     keyboard = InlineKeyboardMarkup(row_width=1)
     keyboard.add(
         InlineKeyboardButton(text="Driver", callback_data="driver"),
         InlineKeyboardButton(text="Dispatcher", callback_data="dispatcher"),
         InlineKeyboardButton(text="Client", callback_data="client"),
     )
-
-    # Send the message with the inline keyboard
     await message.answer("Please select your role:", reply_markup=keyboard)
     await RegistrationState.role.set()
 
 
-# Add a callback query handler to process the role selection
 @dp.callback_query_handler(
-    lambda c: c.data in ["driver", "dispatcher", "client"], state=RegistrationState.role
+    lambda c: c.data in ["driver", "dispatcher", "client"],
+    state=RegistrationState.role,
 )
 async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
     role = query.data
     await state.update_data(role=role)
-
-    # Now you have collected all the necessary information.
-    # You can proceed with registering the user or performing any other necessary actions.
     data = await state.get_data()
     context_data = {
         "phonenumber": data["phonenumber"],
         "first_name": data["fullname"][0],
         "last_name": data["fullname"][-1],
+        "telegram_id": query.from_user.id,
         "password": data["password"],
         "user_type": data["role"],
     }
     print(context_data)
     response = register_user(context_data)
-    await bot.send_message(chat_id=query.message.chat.id, text=str(response))
+    print("_________" * 5)
+    print(response.get("access"))
+    await TokenStorageState.token.set()
+    await state.set_state(TokenStorageState.token)
+    await state.update_data(token=response.get("access"))
+    insert_user(telegram_id=query.from_user.id, token=response.get("access"))
+    await state.finish()
+    await bot.send_message(
+        chat_id=query.message.chat.id, text=str(response), reply_markup=client_buttons
+    )
+
+
+@dp.callback_query_handler(lambda c: c.data == "profile_view")
+async def profile_view_callback(query: types.CallbackQuery, state: FSMContext):
+    # Get token from FSM state
+    print("Token obtained from FSM state")
+    token = get_user_by_telegram_id(query.from_user.id)
+    print("Get profile request")
+    # Request profile details
+    profile_details = get_profile_details(token[2])
+    print("Profile details: ", profile_details)
+
+    # Process profile details, e.g., send to user
+    if profile_details:
+        # Process profile details, e.g., send to user
+        profile_message = f"Profile details:\n{profile_details}"
+        await query.message.answer(
+            profile_message,
+            reply_markup=get_buttons_by_role(
+                profile_details["detail"]["user"]["user_type"],
+            ),
+        )
+    else:
+        await query.message.answer("Failed to fetch profile details.")
+
+
+@dp.callback_query_handler(lambda c: c.data == "show_load")
+async def show_my_loads(query: types.CallbackQuery):
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    else:
+        pass
+    response = get_my_loads(token=token)
+    await bot.send_message(
+        chat_id=query.message.chat.id,
+        text=str(response),
+        reply_markup=driver_my_loads_buttons(
+            [(i["id"], i["client"]["user"]["id"]) for i in response["results"]]
+        ),
+    )
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("driver_show_load_"))
+async def proceed_driver_request_handler(query: types.CallbackQuery):
+    load_id, client_id = query.data.split("_")[-2], query.data.split("_")[-1]
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    
+    await bot.send_message(
+        chat_id=query.message.chat.id,
+        text="Requested fakely",
+    )
 
 
 if __name__ == "__main__":

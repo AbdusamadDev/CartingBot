@@ -18,16 +18,29 @@ def register_user(data):
     return response
 
 
+def get_profile_details(token):
+    request = requests.get(
+        DOMAIN + "/accounts/profile/", headers={"Authorization": f"Bearer {token}"}
+    )
+    print(request.json())
+    response = request.json()
+    return response
+
+
+def get_my_loads(token):
+    request = requests.get(
+        DOMAIN + "/drivers/loads/personal/",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    print(request.json())
+    response = request.json()
+    return response
+
+
 if __name__ == "__main__":
     token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwMDA3NDI2LCJpYXQiOjE3MTM5NTk0MjYsImp0aSI6IjM4NzY1ODMyZjZkMTRiMjhiMTk1ZTYyMDA4MjE2MjQ0IiwidXNlcl9pZCI6MzN9.CoYiowoB9X64a497sz5ygrQkNcjmA9tm5GS-0a6ee2Y"
     print(
-        register_user(
-            {
-                "phonenumber": "+998991887744",
-                "first_name": "a",
-                "last_name": "d",
-                "password": "$Enterpassword2005$",
-                "user_type": "driver",
-            }
+        get_profile_details(
+            token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwMDI4MDM1LCJpYXQiOjE3MTM5ODAwMzUsImp0aSI6IjJlZDc0MmQ0ZDI4NDQ3NGE4NmQ5ZjE1NDA5MTc0OTZhIiwidXNlcl9pZCI6NDh9.oW8cascZ2r31KoYNkc-2dOUPyvOGhMokkGWJCssvOKM"
         )
     )
