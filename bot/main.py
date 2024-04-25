@@ -23,6 +23,11 @@ class RegistrationState(StatesGroup):
     password = State()
 
 
+class DeliveryRequestState(StatesGroup):
+    driver_id = State()
+    load_id = State()
+
+
 class TokenStorageState(StatesGroup):
     token = State()
 
@@ -41,10 +46,11 @@ async def start(message: types.Message, state: FSMContext):
             # If status code is 200, return profile details
             if profile_details:
                 print("Profile details: ", profile_details)
+                a = list(profile_details.keys())[0]
                 await message.answer(
                     f"Wassup Mr. User! Here are your profile details:\n{profile_details}",
                     reply_markup=get_buttons_by_role(
-                        profile_details["detail"]["user"]["user_type"]
+                        profile_details[a]["user"]["user_type"]
                     ),
                 )
             else:
@@ -147,28 +153,59 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
     )
 
 
-@dp.callback_query_handler(lambda c: c.data == "profile_view")
-async def profile_view_callback(query: types.CallbackQuery, state: FSMContext):
-    # Get token from FSM state
-    print("Token obtained from FSM state")
+@dp.callback_query_handler(lambda c: c.data == "request_dispatcher_to_driver")
+async def request_for_load(query: types.CallbackQuery, state: FSMContext):
+    load_id = query.data.split("_")[-1]
     token = get_user_by_telegram_id(query.from_user.id)
-    print("Get profile request")
-    # Request profile details
-    profile_details = get_profile_details(token[2])
-    print("Profile details: ", profile_details)
+    if token:
+        token = token[2]
+    await DeliveryRequestState.load_id.set()
+    await state.set_state(DeliveryRequestState.load_id)
+    await state.update_data(load_id=load_id)
+    print(token)
+    response = show_all_drivers(token=token)
 
-    # Process profile details, e.g., send to user
-    if profile_details:
-        # Process profile details, e.g., send to user
-        profile_message = f"Profile details:\n{profile_details}"
-        await query.message.answer(
-            profile_message,
-            reply_markup=get_buttons_by_role(
-                profile_details["detail"]["user"]["user_type"],
-            ),
-        )
-    else:
-        await query.message.answer("Failed to fetch profile details.")
+    # Extract driver ID and full name from response
+    driver_data = [
+        (i["user"]["id"], f"{i['first_name']} {i['last_name']}") for i in response
+    ]
+    await bot.send_message(
+        chat_id=query.message.chat.id,
+        text=f"Choose driver to : {response}",
+        reply_markup=get_driver_buttons(driver_data),
+    )
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("driver_get_load_"))
+async def ask_for_which_load_handler(query: types.CallbackQuery, state: FSMContext):
+    driver_id = query.data.split("_")[-1]
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    await DeliveryRequestState.driver_id.set()
+    await state.set_state(DeliveryRequestState.driver_id)
+    await state.update_data(driver_id=driver_id)
+    loads = get_all_loads_dispatcher(token=token)
+    print("__________________________________________________________")
+    print(len(loads))
+    print([i["id"] for i in loads])
+    await bot.send_message(
+        chat_id=query.message.chat.id,
+        text=f"Choose load to : {driver_id}",
+        reply_markup=get_loads_button(indices=[i["id"] for i in loads]),
+    )
+
+
+##################################### DISPATCHER ##########################################
+@dp.callback_query_handler(lambda c: c.data == "show_my_load")
+async def client_show_my_load_handler(query: types.CallbackQuery):
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    response = get_client_personal_loads(token)
+    await bot.send_message(
+        chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
+    )
 
 
 @dp.callback_query_handler(lambda c: c.data == "show_load")
@@ -194,24 +231,73 @@ async def proceed_driver_request_handler(query: types.CallbackQuery):
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
-    response = request_driver_to_client(
-        token=token, load_id=load_id, client_id=client_id
-    )
+    response = request_delivery(token=token, load_id=load_id, user_id=client_id)
     await bot.send_message(
         chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
     )
 
 
-@dp.callback_query_handler(lambda c: c.data == "client_show_my_load")
-async def client_show_my_load_handler(query: types.CallbackQuery):
+@dp.callback_query_handler(lambda c: c.data == "profile_view")
+async def profile_view_callback(query: types.CallbackQuery, state: FSMContext):
+    # Get token from FSM state
+    print("Token obtained from FSM state")
+    token = get_user_by_telegram_id(query.from_user.id)
+    print("Get profile request")
+    # Request profile details
+    profile_details = get_profile_details(token[2])
+    print("Profile details: ", profile_details)
+
+    # Process profile details, e.g., send to user
+    if profile_details:
+        # Process profile details, e.g., send to user
+        profile_message = f"Profile details:\n{profile_details}"
+        a = list(profile_details.keys())[0]
+        await query.message.answer(
+            profile_message,
+            reply_markup=get_buttons_by_role(
+                profile_details[a]["user"]["user_type"],
+            ),
+        )
+    else:
+        await query.message.answer("Failed to fetch profile details.")
+
+
+@dp.callback_query_handler(lambda c: c.data == "dispatcher_show_all_loads")
+async def dispatcher_show_all_loads_handler(query: types.CallbackQuery):
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
-    response = get_client_personal_loads(token)
+    response = get_all_loads_dispatcher(token)
     await bot.send_message(
         chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
     )
-    
+
+
+@dp.callback_query_handler(lambda c: c.data == "dispatcher_show_drivers")
+async def show_all_drivers_handler(query: types.CallbackQuery):
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    else:
+        pass
+    response = show_all_drivers(token=token)
+    await bot.send_message(
+        chat_id=query.message.chat.id,
+        text=str(response),
+    )
+
+
+@dp.callback_query_handler(lambda c: c.data == "dispatcher_get_my_loads")
+async def dispatcher_get_my_loads_handler(query: types.CallbackQuery):
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    response = dispatcher_get_my_loads(token)
+    print("Dispatcher response: ", response)
+    await bot.send_message(
+        chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
+    )
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
