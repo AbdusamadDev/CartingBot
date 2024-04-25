@@ -202,6 +202,17 @@ async def proceed_driver_request_handler(query: types.CallbackQuery):
     )
 
 
+@dp.callback_query_handler(lambda c: c.data == "client_show_my_load")
+async def client_show_my_load_handler(query: types.CallbackQuery):
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    response = get_client_personal_loads(token)
+    await bot.send_message(
+        chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
+    )
+    
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     executor.start_polling(dp, skip_updates=True)

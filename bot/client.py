@@ -37,6 +37,15 @@ def get_my_loads(token):
     return response
 
 
+def get_client_personal_loads(token):
+    request = requests.get(
+        DOMAIN + "/clients/load/",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    print(request.json())
+    response = request.json()
+    return response
+
 def request_driver_to_client(token, load_id, client_id):
     request = requests.post(
         DOMAIN + "/notifications/create/",
@@ -49,10 +58,13 @@ def request_driver_to_client(token, load_id, client_id):
     return response
 
 
+def client_add_load(token, )
+
+
 if __name__ == "__main__":
     token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwMDA3NDI2LCJpYXQiOjE3MTM5NTk0MjYsImp0aSI6IjM4NzY1ODMyZjZkMTRiMjhiMTk1ZTYyMDA4MjE2MjQ0IiwidXNlcl9pZCI6MzN9.CoYiowoB9X64a497sz5ygrQkNcjmA9tm5GS-0a6ee2Y"
     print(
-        get_profile_details(
-            token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwMDI4MDM1LCJpYXQiOjE3MTM5ODAwMzUsImp0aSI6IjJlZDc0MmQ0ZDI4NDQ3NGE4NmQ5ZjE1NDA5MTc0OTZhIiwidXNlcl9pZCI6NDh9.oW8cascZ2r31KoYNkc-2dOUPyvOGhMokkGWJCssvOKM"
+        get_client_personal_loads(
+            token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwMDcyODM2LCJpYXQiOjE3MTQwMjQ4MzYsImp0aSI6Ijc0MGNlZTVmZDExNTRhN2ZiMTE0ZmI1OGM0MWQzOTNiIiwidXNlcl9pZCI6NTl9.5bMEEVGJTrSrz53KEK9mCj0WcaCf3u2YjrW3cxAb8Do"
         )
     )

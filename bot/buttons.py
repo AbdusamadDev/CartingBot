@@ -3,7 +3,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 client_buttons = InlineKeyboardMarkup(row_width=2)
 client_btn = [
-    InlineKeyboardButton(text="Show Loads", callback_data="show_loads"),
+    InlineKeyboardButton(text="Show Loads", callback_data="client_show_my_load"),
     InlineKeyboardButton(text="Add Load", callback_data="add_load"),
     InlineKeyboardButton(text="My profile", callback_data="profile_view"),
 ]
