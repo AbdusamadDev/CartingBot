@@ -1,41 +1,50 @@
+import logging
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.types import CallbackQuery
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.utils import executor
 from conf import TOKEN
-from buttons import *
 
-# Initialize bot and dispatcher
+logging.basicConfig(level=logging.INFO)
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
+dp.middleware.setup(LoggingMiddleware())
 
+class ButtonStates(StatesGroup):
+    buttons = State()
 
-# Function to handle button clicks
-@dp.callback_query_handler(lambda c: c.data.startswith("update_button"))
-async def update_button_label(callback_query: types.CallbackQuery):
-    # Extract the current button label
-    current_label = callback_query.message.reply_markup.inline_keyboard[0][0].text
-    # Update the label (for demonstration purposes, just adding ' Updated' to the existing label)
-    index = 0
-    updated_label = current_label + f" Updated {index} "
-    # Edit the message with the updated button label
-    n[0][0].text = updated_label
-    await bot.edit_message_text(
-        chat_id=callback_query.message.chat.id,
-        message_id=callback_query.message.message_id,
-        text="Button with updated label",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=n),
-    )
-    index += 1
-
-
-# Handler for the command to start the bot
-@dp.message_handler(commands=["start"])
+@dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    # Send a message with an inline keyboard
-    keyboard = InlineKeyboardMarkup(inline_keyboard=n)
-    await message.answer("Click the button to update its label:", reply_markup=keyboard)
+    keyboard_markup = types.InlineKeyboardMarkup(row_width=5)
+    buttons = [types.InlineKeyboardButton(str(i), callback_data=str(i)) for i in range(1, 11)]
+    keyboard_markup.add(*buttons)
+    await message.answer("Click on a button:", reply_markup=keyboard_markup)
+    await ButtonStates.buttons.set()
 
+@dp.callback_query_handler(state=ButtonStates.buttons)
+async def process_callback(callback_query: CallbackQuery, state: FSMContext):
+    async with state.proxy() as data:
+        if 'clicked_buttons' not in data:
+            data['clicked_buttons'] = []
+        clicked_button = callback_query.data
+        data['clicked_buttons'].append(clicked_button)
+        clicked_buttons = data['clicked_buttons']
+        
+        keyboard_markup = types.InlineKeyboardMarkup(row_width=5)
+        remaining_buttons = [types.InlineKeyboardButton(str(i), callback_data=str(i)) for i in range(1, 11) if str(i) not in clicked_buttons]
+        keyboard_markup.add(*remaining_buttons)
+        await bot.edit_message_reply_markup(callback_query.message.chat.id, callback_query.message.message_id, reply_markup=keyboard_markup)
 
-# Start the bot
-if __name__ == "__main__":
+@dp.message_handler(commands=['result'])
+async def result(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        if 'clicked_buttons' in data:
+            await message.answer("Clicked button IDs: " + ', '.join(data['clicked_buttons']))
+        else:
+            await message.answer("No buttons clicked yet.")
+
+if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
