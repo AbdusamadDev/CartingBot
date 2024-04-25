@@ -23,6 +23,16 @@ class RegistrationState(StatesGroup):
     password = State()
 
 
+
+
+class LoadCreationState(StatesGroup):
+    product_name = State()
+    product_info = State()
+    product_type = State()
+    product_count = State()
+    address = State()
+    receiver_phone_number = State()
+
 class DeliveryRequestState(StatesGroup):
     driver_id = State()
     load_id = State()
@@ -121,6 +131,95 @@ async def process_password(message: types.Message, state: FSMContext):
     )
     await message.answer("Please select your role:", reply_markup=keyboard)
     await RegistrationState.role.set()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@dp.callback_query_handler(lambda c: c.data == "add_load", state="*")
+async def add_load_handler(query: types.CallbackQuery, state: FSMContext):
+    await query.answer()
+    await query.message.answer("Let's add a new load. Please provide the product name:")
+    await LoadCreationState.product_name.set()
+
+
+# Handler to gather product name
+@dp.message_handler(state=LoadCreationState.product_name)
+async def process_product_name(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['product_name'] = message.text
+    await message.answer("Great! Now, please provide the product info:")
+    await LoadCreationState.next()
+
+
+# Handler to gather product info
+@dp.message_handler(state=LoadCreationState.product_info)
+async def process_product_info(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['product_info'] = message.text
+    await message.answer("Please select the product type:")
+    await LoadCreationState.next()
+
+
+# Handler to gather product type
+@dp.message_handler(state=LoadCreationState.product_type)
+async def process_product_type(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['product_type'] = message.text
+    await message.answer("Please provide the product count:")
+    await LoadCreationState.next()
+
+
+# Handler to gather product count
+@dp.message_handler(state=LoadCreationState.product_count)
+async def process_product_count(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['product_count'] = message.text
+    await message.answer("Please provide the address:")
+    await LoadCreationState.next()
+
+
+# Handler to gather address
+@dp.message_handler(state=LoadCreationState.address)
+async def process_address(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['address'] = message.text
+    await message.answer("Finally, please provide the receiver phone number:")
+    await LoadCreationState.next()
+
+
+# Handler to gather receiver phone number
+@dp.message_handler(state=LoadCreationState.receiver_phone_number)
+async def process_receiver_phone_number(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['receiver_phone_number'] = message.text
+        # Once all details are collected, create the load
+        # create_load(data)  # Implement this function to save the load details in the database
+    await message.answer(str(data))
+    await state.finish()
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @dp.callback_query_handler(
