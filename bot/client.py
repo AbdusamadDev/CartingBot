@@ -37,6 +37,18 @@ def get_my_loads(token):
     return response
 
 
+def request_driver_to_client(token, load_id, client_id):
+    request = requests.post(
+        DOMAIN + "/notifications/create/",
+        headers={"Authorization": f"Bearer {token}"},
+        data={"load": int(load_id), "to_user": int(client_id)},
+    )
+    print(load_id, client_id)
+    print("Response from driver to client request: ", request.json())
+    response = request.json()
+    return response
+
+
 if __name__ == "__main__":
     token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwMDA3NDI2LCJpYXQiOjE3MTM5NTk0MjYsImp0aSI6IjM4NzY1ODMyZjZkMTRiMjhiMTk1ZTYyMDA4MjE2MjQ0IiwidXNlcl9pZCI6MzN9.CoYiowoB9X64a497sz5ygrQkNcjmA9tm5GS-0a6ee2Y"
     print(

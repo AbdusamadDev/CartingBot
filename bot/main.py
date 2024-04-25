@@ -194,10 +194,11 @@ async def proceed_driver_request_handler(query: types.CallbackQuery):
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
-    
+    response = request_driver_to_client(
+        token=token, load_id=load_id, client_id=client_id
+    )
     await bot.send_message(
-        chat_id=query.message.chat.id,
-        text="Requested fakely",
+        chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
     )
 
 
