@@ -24,5 +24,4 @@ build:
     - echo "Deploying to dev server"
     - ssh -oStrictHostKeyChecking=no $PRODUCTION_USER@$PRODUCTION_SERVER "sudo git -C /srv/project/carting.uz-bot/ pull"
     - ssh -oStrictHostKeyChecking=no $PRODUCTION_USER@$PRODUCTION_SERVER "bash -s" < ./build.sh
-    - ssh -oStrictHostKeyChecking=no $PRODUCTION_USER@$PRODUCTION_SERVER "sudo chown -R www-data:www-data /srv/project/carting.uz-bot"
     - echo "Dev Deployed"
