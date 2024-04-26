@@ -10,7 +10,7 @@ build:
   stage: build
   only:
     - master
-  when: manual
+  # when: manual
   allow_failure: false
 
   before_script:
