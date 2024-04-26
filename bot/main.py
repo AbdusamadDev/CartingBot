@@ -8,6 +8,7 @@ from client import *
 from buttons import *
 from database import *
 import logging
+import re
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot=bot, storage=MemoryStorage())
@@ -23,8 +24,6 @@ class RegistrationState(StatesGroup):
     password = State()
 
 
-
-
 class LoadCreationState(StatesGroup):
     product_name = State()
     product_info = State()
@@ -32,6 +31,8 @@ class LoadCreationState(StatesGroup):
     product_count = State()
     address = State()
     receiver_phone_number = State()
+    date_delivery = State()
+
 
 class DeliveryRequestState(StatesGroup):
     driver_id = State()
@@ -133,20 +134,6 @@ async def process_password(message: types.Message, state: FSMContext):
     await RegistrationState.role.set()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @dp.callback_query_handler(lambda c: c.data == "add_load", state="*")
 async def add_load_handler(query: types.CallbackQuery, state: FSMContext):
     await query.answer()
@@ -158,7 +145,7 @@ async def add_load_handler(query: types.CallbackQuery, state: FSMContext):
 @dp.message_handler(state=LoadCreationState.product_name)
 async def process_product_name(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['product_name'] = message.text
+        data["product_name"] = message.text
     await message.answer("Great! Now, please provide the product info:")
     await LoadCreationState.next()
 
@@ -167,7 +154,7 @@ async def process_product_name(message: types.Message, state: FSMContext):
 @dp.message_handler(state=LoadCreationState.product_info)
 async def process_product_info(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['product_info'] = message.text
+        data["product_info"] = message.text
     await message.answer("Please select the product type:")
     await LoadCreationState.next()
 
@@ -176,7 +163,7 @@ async def process_product_info(message: types.Message, state: FSMContext):
 @dp.message_handler(state=LoadCreationState.product_type)
 async def process_product_type(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['product_type'] = message.text
+        data["product_type"] = message.text
     await message.answer("Please provide the product count:")
     await LoadCreationState.next()
 
@@ -185,7 +172,7 @@ async def process_product_type(message: types.Message, state: FSMContext):
 @dp.message_handler(state=LoadCreationState.product_count)
 async def process_product_count(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['product_count'] = message.text
+        data["product_count"] = message.text
     await message.answer("Please provide the address:")
     await LoadCreationState.next()
 
@@ -194,7 +181,7 @@ async def process_product_count(message: types.Message, state: FSMContext):
 @dp.message_handler(state=LoadCreationState.address)
 async def process_address(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['address'] = message.text
+        data["address"] = message.text
     await message.answer("Finally, please provide the receiver phone number:")
     await LoadCreationState.next()
 
@@ -203,23 +190,29 @@ async def process_address(message: types.Message, state: FSMContext):
 @dp.message_handler(state=LoadCreationState.receiver_phone_number)
 async def process_receiver_phone_number(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['receiver_phone_number'] = message.text
-        # Once all details are collected, create the load
-        # create_load(data)  # Implement this function to save the load details in the database
-    await message.answer(str(data))
+        data["receiver_phone_number"] = message.text
+    await message.answer("Please provide the delivery date (e.g., YYYY-MM-DD):")
+    await LoadCreationState.date_delivery.set()
+
+
+# Handler to gather delivery date
+@dp.message_handler(state=LoadCreationState.date_delivery)
+async def process_delivery_date(message: types.Message, state: FSMContext):
+    token = get_user_by_telegram_id(message.from_user.id)
+    if token:
+        token = token[2]
+    async with state.proxy() as data:
+        if not re.match(r'^\d{4}-\d{2}-\d{2}$', message.text):
+            await message.answer("Please enter the delivery date in the format YYYY-MM-DD.")
+            await LoadCreationState.date_delivery.set()
+            return 
+        data["date_delivery"] = message.text
+        data["from_location"], data["to_location"] = [1], [1]
+        print(data)
+        response = client_add_load(data=data.as_dict(), token=token)
+        print("\n" * 5)
+    await message.answer(f"Load details saved successfully!{response}")
     await state.finish()
-
-
-
-
-
-
-
-
-
-
-
-
 
 @dp.callback_query_handler(
     lambda c: c.data in ["driver", "dispatcher", "client"],

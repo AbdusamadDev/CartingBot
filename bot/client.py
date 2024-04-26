@@ -107,7 +107,14 @@ def show_all_drivers(token):
     return response
 
 
-# def client_add_load(token, )
+def client_add_load(token, data):
+    request_delivery = requests.post(
+        DOMAIN + "/clients/load/",
+        headers={"Authorization": f"Bearer {token}"},
+        data=data,
+    )
+    return request_delivery.json()
+
 
 if __name__ == "__main__":
     token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwMDA3NDI2LCJpYXQiOjE3MTM5NTk0MjYsImp0aSI6IjM4NzY1ODMyZjZkMTRiMjhiMTk1ZTYyMDA4MjE2MjQ0IiwidXNlcl9pZCI6MzN9.CoYiowoB9X64a497sz5ygrQkNcjmA9tm5GS-0a6ee2Y"
