@@ -82,3 +82,22 @@ def get_buttons_by_role(role):
     }
     print("User role button: ", user_button[role])
     return user_button[role]
+
+
+# Define the function to generate district selection buttons
+def get_district_selection_buttons():
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    districts = [
+        "District A",
+        "District B",
+        "District C",
+        "District D",
+    ]  # Add your districts here
+    for district in districts:
+        keyboard.add(
+            InlineKeyboardButton(
+                text=district,
+                callback_data=f"district_{district.lower().replace(' ', '_')}",
+            )
+        )
+    return keyboard
