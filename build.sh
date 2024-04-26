@@ -1,6 +1,6 @@
 #!/bin/bash
 cd /srv/project/carting.uz-bot/
-la 
+ls -lart
 # if sudo npm i; then
 #     if sudo npm run build; then
 #         echo "build success"
