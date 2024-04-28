@@ -278,7 +278,7 @@ async def client_show_my_load_handler(query: types.CallbackQuery):
     await bot.send_message(
         chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
     )
-
+ 
 
 @dp.callback_query_handler(lambda c: c.data == "show_load")
 async def show_my_loads(query: types.CallbackQuery):
