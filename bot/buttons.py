@@ -36,20 +36,18 @@ dispatcher_buttons.add(*dispatcher_btn)
 def get_loads_button(indices):
     keyboard = InlineKeyboardMarkup()
     for load_id in indices:
-        print(load_id)
         keyboard.add(
             InlineKeyboardButton(
                 text=f"Request for load: {load_id}",
                 callback_data=f"dispatcher_driver_delivery_request_{load_id}",
             )
         )
-        return keyboard
+    return keyboard
 
 
 def driver_my_loads_buttons(indices):
     keyboard = InlineKeyboardMarkup(row_width=1)
     for load_id, client_id in indices:
-        print(load_id, client_id)
         keyboard.add(
             InlineKeyboardButton(
                 text=f"Request for {load_id}",
@@ -57,9 +55,6 @@ def driver_my_loads_buttons(indices):
             )
         )
     return keyboard
-
-
-n = [[InlineKeyboardButton("Click me to update label", callback_data="update_button")]]
 
 
 def get_driver_buttons(indices):
@@ -80,5 +75,4 @@ def get_buttons_by_role(role):
         "client": client_buttons,
         "dispatcher": dispatcher_buttons,
     }
-    print("User role button: ", user_button[role])
     return user_button[role]
