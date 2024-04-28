@@ -1,0 +1,27 @@
+image: docker:24.0
+variables:
+  PRODUCTION_SERVER: '10.3.8.159'
+  PRODUCTION_USER: 'runner'
+
+stages:
+    - build
+
+build: 
+  stage: build
+  only:
+    - master
+  # when: manual
+  allow_failure: false
+
+  before_script:
+      - mkdir -p ~/.ssh
+      - chmod 700 ~/.ssh
+      - eval $(ssh-agent -s)
+      - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+      - ssh-add <(echo "$SSH_PRIVATE_KEY")
+
+  script:
+    - echo "Deploying to dev server"
+    - ssh -oStrictHostKeyChecking=no $PRODUCTION_USER@$PRODUCTION_SERVER "sudo git -C /srv/project/carting.uz-bot/ pull"
+    - ssh -oStrictHostKeyChecking=no $PRODUCTION_USER@$PRODUCTION_SERVER "bash -s" < ./build.sh
+    - echo "Dev Deployed"

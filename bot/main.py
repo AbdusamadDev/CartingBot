@@ -250,7 +250,7 @@ async def request_for_load(query: types.CallbackQuery, state: FSMContext):
         chat_id=query.message.chat.id,
         text=f"Choose driver to : {response}",
         reply_markup=get_driver_buttons(driver_data),
-    ) 
+    )
 
  
 @dp.callback_query_handler(lambda c: c.data.startswith("driver_get_load_"))
@@ -305,7 +305,6 @@ async def dispatcher_request_to_driver_handler(
     query: types.CallbackQuery, state: FSMContext
 ):
     data = await state.get_data()
-    print(data)
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
