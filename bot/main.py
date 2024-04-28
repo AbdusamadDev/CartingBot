@@ -1,12 +1,12 @@
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram import executor, Bot, Dispatcher, types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from conf import TOKEN
 from client import *
 from buttons import *
 from database import *
+from states import *
 import logging
 import re
 
@@ -16,31 +16,6 @@ auth_token = None
 create_table()
 
 
-class RegistrationState(StatesGroup):
-    fullname = State()
-    phonenumber = State()
-    sms_code = State()
-    role = State()
-    password = State()
-
-
-class LoadCreationState(StatesGroup):
-    product_name = State()
-    product_info = State()
-    product_type = State()
-    product_count = State()
-    address = State()
-    receiver_phone_number = State()
-    date_delivery = State()
-
-
-class DeliveryRequestState(StatesGroup):
-    driver_id = State()
-    load_id = State()
-
-
-class TokenStorageState(StatesGroup):
-    token = State()
 
 
 @dp.message_handler(commands=["start"], state="*")

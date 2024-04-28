@@ -16,6 +16,7 @@ class LoadCreationState(StatesGroup):
     product_count = State()
     address = State()
     receiver_phone_number = State()
+    date_delivery = State()
 
 
 class DeliveryRequestState(StatesGroup):
