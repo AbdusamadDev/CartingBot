@@ -100,7 +100,7 @@ def regions_btn(regions: list):
 
 
 # Define the function to generate district selection buttons
-def get_district_selection_buttons(districts):
+def get_district_selection_buttons(districts, end=False):
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
         *[
@@ -110,9 +110,15 @@ def get_district_selection_buttons(districts):
         )
         for district in districts],
     )
-    next_btn = InlineKeyboardButton(
-            text="Next",
-            callback_data="next_to_receiver_phone_number",
-        ) 
+    if end:
+        next_btn = InlineKeyboardButton(
+                text="Next",
+                callback_data="next_to_receiver_phone_number",
+            ) 
+    else:
+        next_btn = InlineKeyboardButton(
+                text="Next",
+                callback_data="district_next",
+            )
     keyboard.row(next_btn)
     return keyboard
