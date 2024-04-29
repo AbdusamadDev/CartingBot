@@ -60,6 +60,16 @@ async def start(message: types.Message, state: FSMContext):
         await RegistrationState.phonenumber.set()
 
 
+@dp.message_handler(state=RegistrationState.phonenumber)
+async def process_phonenumber(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data["phonenumber"] = message.text
+    await message.answer(
+        f"SMS activation code sent to the phone number: {message.text}."
+        "Please enter the 4 digit code"
+    )
+    await RegistrationState.sms_code.set()
+
 @dp.message_handler(
     content_types=types.ContentType.CONTACT, state=RegistrationState.phonenumber
 )
