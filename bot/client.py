@@ -72,15 +72,13 @@ def request_delivery(token, load_id, user_id):
     return response
 
 
-def fetch_districts_details():
-    try:
-        response = requests.get(DOMAIN + "/drivers/regions/")
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return None
-    except requests.RequestException as e:
-        return None
+def fetch_districts_details(token):
+    request = requests.get(
+        DOMAIN + "/drivers/regions/",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    response = request.json()
+    return response
 
 
 def get_all_loads_dispatcher(token):

@@ -17,6 +17,7 @@ class LoadCreationState(StatesGroup):
     address = State()
     receiver_phone_number = State()
     date_delivery = State()
+    from_location = State()
 
 
 class DeliveryRequestState(StatesGroup):

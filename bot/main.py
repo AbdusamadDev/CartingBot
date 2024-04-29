@@ -217,21 +217,82 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
             await LoadCreationState.date_delivery.set()
             return
         data["date_delivery"] = message.text
-        data["from_location"], data["to_location"] = [1], [1]
-        response = client_add_load(data=data.as_dict(), token=token)
-    await message.answer(f"Load details saved successfully!{response}")
-    await state.finish()
+        regions = fetch_districts_details(token)
+        await message.answer(
+            "Choose regions: ", reply_markup=get_regions_button(regions)
+        )
+        await LoadCreationState.from_location.set()
 
 
-@dp.callback_query_handler(lambda c: c.data == "")
+@dp.message_handler(commands=["come"])
+async def comer(message: types.Message):
+    token = get_user_by_telegram_id(message.from_user.id)
+    if token:
+        token = token[2]
+    regions = fetch_districts_details(token)
+    await message.answer("Choose regions: ", reply_markup=get_regions_button(regions))
 
-@dp.callback_query_handler(lambda c: c.data=="notifications")
+
+@dp.callback_query_handler(lambda c: c.data.startswith("fetch_districts_of_region_"))
+async def fetch_districts_of_region(query: types.CallbackQuery):
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    regions = fetch_districts_details(token)
+    region_id = int(query.data.split("_")[-1])
+    print("REGION ID: ", region_id)
+    for region in regions:
+        if region_id == region["pk"]:
+            print("EQUALLLLLLLLLLLLLLL")
+            await bot.send_message(
+                query.message.chat.id,
+                "Choose districts: ",
+                reply_markup=get_districts_button(region),
+            )
+            return
+
+
+dp.callback_query_handler(lambda c: c.data.startswith("add_district_to_state_"))
+async def add_district_to_state(query: types.CallbackQuery):
+    print("salommmmm")
+    await bot.send_message(chat_id=query.message.chat.id, text="fucccccc")
+    # district_id = query.data.split("_")[-1] + " "
+    # print("_________")
+    # print(district_id)
+    # token = get_user_by_telegram_id(query.from_user.id)
+    # if token:
+    #     token = token[2]
+    # with state.proxy() as data:
+    #     data["from_location"] = data["from_location"] + district_id
+    #     print("STATE DATA:      ", data)
+    #     regions = fetch_districts_details(token)
+    # region_id = int(query.data.split("_")[-1])
+    # print("REGION ID: ", region_id)
+    # for region in regions:
+    #     if region_id == region["pk"]:
+    #         print("EQUALLLLLLLLLLLLLLL")
+    #         await bot.send_message(
+    #             query.message.chat.id,
+    #             "Choose districts: ",
+    #             reply_markup=get_districts_button(region),
+    #         )
+    #         return
+
+
+#     data["from_location"], data["to_location"] = [1], [1]
+#     response = client_add_load(data=data.as_dict(), token=token)
+# await message.answer(f"Load details saved successfully!{response}")
+# await state.finish()
+
+
+@dp.callback_query_handler(lambda c: c.data == "notifications")
 async def get_notifications_handler(query: types.CallbackQuery):
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
     notifications = get_notifications(token)
     await bot.send_message(query.message.chat.id, text=str(notifications))
+
 
 @dp.callback_query_handler(
     lambda c: c.data in ["driver", "dispatcher", "client"],
