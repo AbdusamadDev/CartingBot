@@ -14,6 +14,8 @@ class LoadCreationState(StatesGroup):
     product_info = State()
     product_type = State()
     product_count = State()
+    region = State()
+    district = State()
     address = State()
     receiver_phone_number = State()
     date_delivery = State()

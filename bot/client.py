@@ -72,9 +72,10 @@ def request_delivery(token, load_id, user_id):
     return response
 
 
-def fetch_districts_details():
+def fetch_districts_details(token):
     try:
-        response = requests.get(DOMAIN + "/drivers/regions/")
+        headers={"Authorization": f"Bearer {token}"}
+        response = requests.get(DOMAIN + "/drivers/regions/", headers=headers)
         if response.status_code == 200:
             return response.json()
         else:

@@ -1,2 +1,2 @@
-TOKEN = "6001980782:AAEubKbK3PmqEoetDByFMh8ZhVhAixXAWvA"
-DOMAIN = "http://localhost:8000"
+TOKEN = "5911456380:AAFL6rxq-qLLJJywHEzWTo5JAg2Ydd1NH0U"
+DOMAIN = "https://new-api.carting.uz"
