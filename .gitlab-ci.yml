@@ -22,6 +22,6 @@ build:
 
   script:
     - echo "Deploying to dev server"
-    - ssh -oStrictHostKeyChecking=no $PRODUCTION_USER@$PRODUCTION_SERVER "sudo git -C /srv/project/carting.uz-bot/ pull"
+    - ssh -oStrictHostKeyChecking=no $PRODUCTION_USER@$PRODUCTION_SERVER "sudo git -C /srv/project/carting.uz-bot/ pull --rebase"
     - ssh -oStrictHostKeyChecking=no $PRODUCTION_USER@$PRODUCTION_SERVER "bash -s" < ./build.sh
     - echo "Dev Deployed"
