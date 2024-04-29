@@ -8,6 +8,7 @@ from buttons import *
 from database import *
 from states import *
 import logging
+from utils import *
 import re
 
 bot = Bot(token=TOKEN)
@@ -62,6 +63,10 @@ async def start(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=RegistrationState.phonenumber)
 async def process_phonenumber(message: types.Message, state: FSMContext):
+    if not is_valid(message.text):
+        await message.answer("Please enter a valid phone number.")
+        await RegistrationState.phonenumber.set()
+        return
     async with state.proxy() as data:
         data["phonenumber"] = message.text
     await message.answer(
