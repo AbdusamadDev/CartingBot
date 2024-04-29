@@ -1,8 +1,14 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
+notifications_button = InlineKeyboardButton(
+    text="Show Notifications",
+    callback_data="notifications",
+)
+
 client_buttons = InlineKeyboardMarkup(row_width=2)
 client_btn = [
+    notifications_button,
     InlineKeyboardButton(text="Show Loads", callback_data="show_my_load"),
     InlineKeyboardButton(text="Add Load", callback_data="add_load"),
     InlineKeyboardButton(text="My profile", callback_data="profile_view"),
@@ -12,6 +18,7 @@ client_buttons.add(*client_btn)
 
 driver_buttons = InlineKeyboardMarkup()
 driver_btn = [
+    notifications_button,
     InlineKeyboardButton(text="Show my Loads", callback_data="show_load"),
     InlineKeyboardButton(text="My profile", callback_data="profile_view"),
 ]
@@ -19,6 +26,7 @@ driver_buttons.add(*driver_btn)
 
 dispatcher_buttons = InlineKeyboardMarkup()
 dispatcher_btn = [
+    notifications_button,
     InlineKeyboardButton(
         text="Show All loads", callback_data="dispatcher_show_all_loads"
     ),
@@ -86,7 +94,7 @@ def get_district_selection_buttons():
         "District B",
         "District C",
         "District D",
-    ]  # Add your districts here
+    ]
     for district in districts:
         keyboard.add(
             InlineKeyboardButton(

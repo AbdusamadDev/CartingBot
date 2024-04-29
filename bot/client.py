@@ -53,6 +53,15 @@ def get_client_personal_loads(token):
     return response
 
 
+def get_notifications(token):
+    request = requests.get(
+        DOMAIN + "/notifications/loads_notify/",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    response = request.json()
+    return response
+
+
 def request_delivery(token, load_id, user_id):
     request = requests.post(
         DOMAIN + "/notifications/create/",
