@@ -61,6 +61,11 @@ async def start(message: types.Message, state: FSMContext):
         await RegistrationState.phonenumber.set()
 
 
+# @dp.callback_query_handler(lambda c: c.data == "show_notifications")
+# async def show_notifications(query: types.CallbackQuery):
+#     notifications = make_request(token=token)
+
+
 @dp.message_handler(state=RegistrationState.phonenumber)
 async def process_phonenumber(message: types.Message, state: FSMContext):
     if not is_valid(message.text):
@@ -74,6 +79,7 @@ async def process_phonenumber(message: types.Message, state: FSMContext):
         "Please enter the 4 digit code"
     )
     await RegistrationState.sms_code.set()
+
 
 @dp.message_handler(
     content_types=types.ContentType.CONTACT, state=RegistrationState.phonenumber
@@ -238,9 +244,16 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
     await state.set_state(TokenStorageState.token)
     await state.update_data(token=response.get("access"))
     insert_user(telegram_id=query.from_user.id, token=response.get("access"))
+    user_button = {
+        "driver": driver_buttons,
+        "client": client_buttons,
+        "dispatcher": dispatcher_buttons,
+    }
     await state.finish()
     await bot.send_message(
-        chat_id=query.message.chat.id, text=str(response), reply_markup=client_buttons
+        chat_id=query.message.chat.id,
+        text=str(response),
+        reply_markup=user_button[response["user_type"]],
     )
 
 
