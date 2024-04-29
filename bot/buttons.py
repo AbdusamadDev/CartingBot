@@ -86,27 +86,33 @@ def get_buttons_by_role(role):
     return user_button[role]
 
 
-def get_regions_button(data):
-    keyboard = InlineKeyboardMarkup(row_width=1)
-    print(data)
-    for region in data:
-        keyboard.add(
+def regions_btn(regions: list):
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard.add(
+        *[
             InlineKeyboardButton(
-                text=f"{region['name']}",
-                callback_data=f"fetch_districts_of_region_{region['pk']}",
-            )
+            text=region['name'],
+            callback_data=f"region:{region['pk']}",
         )
+        for region in regions]
+    )
     return keyboard
 
 
-def get_districts_button(data):
-    keyboard = InlineKeyboardMarkup(row_width=1)
-    print("DATA: ", data["district"])
-    for district in data["district"]:
-        keyboard.add(
+# Define the function to generate district selection buttons
+def get_district_selection_buttons(districts):
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard.add(
+        *[
             InlineKeyboardButton(
-                text=f"{district['name']}",
-                callback_data=f"add_district_to_state_{district['pk']}",
-            )
+            text=district['name'],
+            callback_data=f"district:{district['pk']}",
         )
+        for district in districts],
+    )
+    next_btn = InlineKeyboardButton(
+            text="Next",
+            callback_data="next_to_receiver_phone_number",
+        ) 
+    keyboard.row(next_btn)
     return keyboard

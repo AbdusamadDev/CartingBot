@@ -1,5 +1,6 @@
+../db.sqlite3
 venv
-bot/__pycache__
+*/__pycache__/*
 bot/notes.txt
 bot/__pycache__/client.cpython-311.pyc
 bot/__pycache__/conf.cpython-311.pyc
