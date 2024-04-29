@@ -16,8 +16,6 @@ auth_token = None
 create_table()
 
 
-
-
 @dp.message_handler(commands=["start"], state="*")
 async def start(message: types.Message, state: FSMContext):
     token = get_user_by_telegram_id(message.from_user.id)
@@ -46,20 +44,39 @@ async def start(message: types.Message, state: FSMContext):
             await RegistrationState.phonenumber.set()
     else:
         await message.answer(
-            "Hi, let's create an account. Please enter your phone number:"
+            "Hi, let's create an account. Please click the button below to share your phone number:",
+            reply_markup=types.ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        types.KeyboardButton(
+                            text="Share my phone number", request_contact=True
+                        )
+                    ]
+                ],
+                resize_keyboard=True,
+                one_time_keyboard=True,
+            ),
         )
         await RegistrationState.phonenumber.set()
 
 
-@dp.message_handler(state=RegistrationState.phonenumber)
-async def process_phonenumber(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        data["phonenumber"] = message.text
-    await message.answer(
-        f"SMS activation code sent to the phone number: {message.text}."
-        "Please enter the 4 digit code"
-    )
-    await RegistrationState.sms_code.set()
+@dp.message_handler(
+    content_types=types.ContentType.CONTACT, state=RegistrationState.phonenumber
+)
+async def handle_contact(message: types.Message, state: FSMContext):
+    contact = message.contact
+    if (
+        contact.user_id == message.from_user.id
+    ):  # Ensuring the contact belongs to the sender
+        phonenumber = contact.phone_number
+        async with state.proxy() as data:
+            data["phonenumber"] = phonenumber
+        await message.answer(
+            f"Please enter 4 digit code which was sent to your phonenumber: {phonenumber}."
+        )
+        await RegistrationState.sms_code.set()
+    else:
+        await message.answer("Please send your own contact information.")
 
 
 @dp.message_handler(state=RegistrationState.sms_code)
@@ -227,7 +244,7 @@ async def request_for_load(query: types.CallbackQuery, state: FSMContext):
         reply_markup=get_driver_buttons(driver_data),
     )
 
- 
+
 @dp.callback_query_handler(lambda c: c.data.startswith("driver_get_load_"))
 async def ask_for_which_load_handler(query: types.CallbackQuery, state: FSMContext):
     driver_id = query.data.split("_")[-1]
@@ -243,7 +260,7 @@ async def ask_for_which_load_handler(query: types.CallbackQuery, state: FSMConte
     )
     await DeliveryRequestState.load_id.set()
 
- 
+
 @dp.callback_query_handler(lambda c: c.data == "show_my_load")
 async def client_show_my_load_handler(query: types.CallbackQuery):
     token = get_user_by_telegram_id(query.from_user.id)
@@ -253,7 +270,7 @@ async def client_show_my_load_handler(query: types.CallbackQuery):
     await bot.send_message(
         chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
     )
- 
+
 
 @dp.callback_query_handler(lambda c: c.data == "show_load")
 async def show_my_loads(query: types.CallbackQuery):
@@ -304,14 +321,9 @@ async def proceed_driver_request_handler(query: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda c: c.data == "profile_view")
 async def profile_view_callback(query: types.CallbackQuery, state: FSMContext):
-    # Get token from FSM state
     token = get_user_by_telegram_id(query.from_user.id)
-    # Request profile details
     profile_details = get_profile_details(token[2])
-
-    # Process profile details, e.g., send to user
     if profile_details:
-        # Process profile details, e.g., send to user
         profile_message = f"Profile details:\n{profile_details}"
         a = list(profile_details.keys())[0]
         await query.message.answer(
