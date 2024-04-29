@@ -223,6 +223,8 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
     await state.finish()
 
 
+@dp.callback_query_handler(lambda c: c.data == "")
+
 @dp.callback_query_handler(lambda c: c.data=="notifications")
 async def get_notifications_handler(query: types.CallbackQuery):
     token = get_user_by_telegram_id(query.from_user.id)
