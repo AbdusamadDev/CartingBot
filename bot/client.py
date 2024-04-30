@@ -74,7 +74,7 @@ def request_delivery(token, load_id, user_id):
 
 def fetch_districts_details(token):
     try:
-        headers={"Authorization": f"Bearer {token}"}
+        headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(DOMAIN + "/drivers/regions/", headers=headers)
         if response.status_code == 200:
             return response.json()
@@ -102,13 +102,26 @@ def show_all_drivers(token):
     return response
 
 
-def client_add_load(token, data):
-    request_delivery = requests.post(
-        DOMAIN + "/clients/load/",
-        headers={"Authorization": f"Bearer {token}"},
-        data=data,
-    )
-    return request_delivery.json()
+def client_add_load(token, data, image_blob):
+    try:
+        # URL of your Django app endpoint for load creation
+        django_url = DOMAIN + "/clients/load/"
+        # Prepare the files dictionary to send the image as a file
+        files = {'product_image': ('filename.jpg', image_blob, 'image/jpeg')}
+        # Note: Adjust the MIME type ('image/jpeg') as necessary for your image format
+
+        # Ensure other data is sent as part of the data parameter
+        response = requests.post(
+            django_url,
+            headers={"Authorization": f"Bearer {token}"},
+            data=data,
+            files=files  # Add the files parameter here
+        )
+
+        return response.json()
+    except Exception as e:
+        print("An error occurred:", e)
+        return None
 
 
 if __name__ == "__main__":

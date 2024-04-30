@@ -10,6 +10,7 @@ class RegistrationState(StatesGroup):
 
 
 class LoadCreationState(StatesGroup):
+    image = State()
     product_name = State()
     product_info = State()
     product_type = State()

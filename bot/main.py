@@ -2,6 +2,7 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram import executor, Bot, Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ContentType
 from conf import TOKEN
 from client import *
 from buttons import *
@@ -17,6 +18,10 @@ auth_token = None
 create_table()
 
 
+# ###########################################################################
+# ###########################################################################
+# ###########################################################################
+# Start command
 @dp.message_handler(commands=["start"], state="*")
 async def start(message: types.Message, state: FSMContext):
     token = get_user_by_telegram_id(message.from_user.id)
@@ -26,13 +31,19 @@ async def start(message: types.Message, state: FSMContext):
 
         if profile_details:
             if profile_details:
-                a = list(profile_details.keys())[0]
-                await message.answer(
-                    f"Wassup Mr. User! Here are your profile details:\n{profile_details}",
-                    reply_markup=get_buttons_by_role(
-                        profile_details[a]["user"]["user_type"]
-                    ),
-                )
+                if "detail" in profile_details:
+                    await message.answer(
+                        "Not authenticated, please provide yout phonenumber",
+                    )
+                    await RegistrationState.phonenumber.set()
+                else:
+                    a = list(profile_details.keys())[0]
+                    await message.answer(
+                        f"Wassup Mr. User! Here are your profile details:\n{profile_details}",
+                        reply_markup=get_buttons_by_role(
+                            profile_details[a]["user"]["user_type"]
+                        ),
+                    )
             else:
                 await message.answer(
                     "Welcome back! Please proceed with the registration process."
@@ -59,6 +70,12 @@ async def start(message: types.Message, state: FSMContext):
             ),
         )
         await RegistrationState.phonenumber.set()
+
+
+# ###########################################################################
+# ###########################################################################
+# ###########################################################################
+# Registration
 
 
 @dp.message_handler(state=RegistrationState.phonenumber)
@@ -138,44 +155,135 @@ async def process_password(message: types.Message, state: FSMContext):
     await RegistrationState.role.set()
 
 
-@dp.callback_query_handler(lambda c: c.data == "add_load", state="*")
-async def add_load_handler(query: types.CallbackQuery, state: FSMContext):
-    await query.answer()
-    await query.message.answer("Let's add a new load. Please provide the product name:")
-    await LoadCreationState.product_name.set()
+@dp.callback_query_handler(
+    lambda c: c.data in ["driver", "dispatcher", "client"],
+    state=RegistrationState.role,
+)
+async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
+    role = query.data
+    await state.update_data(role=role)
+    data = await state.get_data()
+    context_data = {
+        "phonenumber": data["phonenumber"],
+        "first_name": data["fullname"][0],
+        "last_name": data["fullname"][-1],
+        "telegram_id": query.from_user.id,
+        "password": data["password"],
+        "user_type": data["role"],
+    }
+    response = register_user(context_data)
+    if "detail" in response.keys():
+        await bot.send_message(
+            "Unable to authenticate, please retry, enter phonenumber",
+        )
+        await RegistrationState.phonenumber.set()
+    await TokenStorageState.token.set()
+    await state.set_state(TokenStorageState.token)
+    await state.update_data(token=response.get("access"))
+    insert_user(telegram_id=query.from_user.id, token=response.get("access"))
+    user_button = {
+        "driver": driver_buttons,
+        "client": client_buttons,
+        "dispatcher": dispatcher_buttons,
+    }
+    await state.finish()
+    await bot.send_message(
+        chat_id=query.message.chat.id,
+        text=str(response),
+        reply_markup=user_button[response["user_type"]],
+    )
 
 
-# Handler to gather product name
+# ###########################################################################
+# ###########################################################################
+# ###########################################################################
+# Load creation
+
+
+@dp.callback_query_handler(lambda query: query.data == "add_load")
+async def process_add_load_callback(query: types.CallbackQuery, state: FSMContext):
+    print("Button is being clicked")
+    await bot.send_message(query.message.chat.id, text="Provide image")
+    await LoadCreationState.image.set()
+
+
+@dp.message_handler(state=LoadCreationState.image, content_types=["photo"])
+async def add_load_handler(message: types.Message, state: FSMContext):
+    """
+    Handles the addition of a load image by the user. It saves the image URL to the state
+    and prompts the user to provide the name of the load.
+
+    Parameters:
+    - message: types.Message
+        The message from the user, expected to contain a photo.
+    - state: FSMContext
+        The finite state machine context to store data across different handler calls.
+
+    The function extracts the URL of the last photo sent by the user, saves it in the state,
+    and asks the user to provide the name of the load next.
+    """
+    print("Load image is being processed")
+    print("Image: ", message.photo)
+    photo_url = await message.photo[
+        -1
+    ].get_url()  # Await the coroutine to get the actual URL
+    print("IMAGE URL: ", photo_url)
+    async with state.proxy() as data:
+        data["image"] = photo_url  # Save the photo URL in the state
+    await message.answer("Provide load name")  # Prompt user for the load name
+    await LoadCreationState.product_name.set()  # Move to the next state to collect load name
+
+
 @dp.message_handler(state=LoadCreationState.product_name)
 async def process_product_name(message: types.Message, state: FSMContext):
+    """
+    Processes the load name provided by the user. It saves the load name to the state
+    and prompts the user to provide additional information about the load.
+
+    Parameters:
+    - message: types.Message
+        The message from the user, expected to contain the name of the load.
+    - state: FSMContext
+        The finite state machine context to store data across different handler calls.
+
+    The function saves the provided load name in the state and asks the user to provide
+    more detailed information about the load.
+    """
+    print("Load Name: ", message.text)
     async with state.proxy() as data:
-        data["product_name"] = message.text
-    await message.answer("Great! Now, please provide the product info:")
-    await LoadCreationState.next()
+        data["product_name"] = message.text  # Save the provided load name in the state
+    await message.answer(
+        "Provide load info"
+    )  # Prompt user for more detailed load information
+    await LoadCreationState.next()  # Move to the next state to collect more load information
 
 
-# Handler to gather product info
 @dp.message_handler(state=LoadCreationState.product_info)
 async def process_product_info(message: types.Message, state: FSMContext):
+    print("Product info: ", message.text)
     async with state.proxy() as data:
         data["product_info"] = message.text
     await message.answer("Please select the product type:")
     await LoadCreationState.next()
 
 
-# Handler to gather product type
 @dp.message_handler(state=LoadCreationState.product_type)
 async def process_product_type(message: types.Message, state: FSMContext):
+    print("Load type: ", message.text)
     async with state.proxy() as data:
         data["product_type"] = message.text
     await message.answer("Please provide the product count:")
     await LoadCreationState.next()
 
 
-# Handler to gather product count
 @dp.message_handler(state=LoadCreationState.product_count)
 async def process_product_count(message: types.Message, state: FSMContext):
+    print("Load count: ", message.text)
     async with state.proxy() as data:
+        if not message.text.isdigit():
+            await message.answer("Please provide a valid number")
+            await LoadCreationState.product_count.set()
+            return
         data["product_count"] = int(message.text)
     await message.answer("Please provide the address:")
     await LoadCreationState.address.set()
@@ -183,10 +291,13 @@ async def process_product_count(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(state=LoadCreationState.region, text_contains="region:")
 async def process_region_callback(query: types.CallbackQuery, state: FSMContext):
+    print("Load count: ", query.data)
     selected_region = query.data.split(":")[-1]
     state_data = await state.get_data()
-    districts = get_districts(regions=state_data['regions'], selected_region=selected_region)
-    btn = get_district_selection_buttons(districts, state_data['end'])
+    districts = get_districts(
+        regions=state_data["regions"], selected_region=selected_region
+    )
+    btn = get_district_selection_buttons(districts, state_data["end"])
     await query.message.edit_text(text="Please! Select districts:", reply_markup=btn)
     await LoadCreationState.next()
 
@@ -207,7 +318,9 @@ async def process_district_callback(query: types.CallbackQuery, state: FSMContex
         await query.message.edit_reply_markup(reply_markup=btn)
 
 
-@dp.callback_query_handler(state=LoadCreationState.district, text="next_to_receiver_phone_number")
+@dp.callback_query_handler(
+    state=LoadCreationState.district, text="next_to_receiver_phone_number"
+)
 async def process_address_callback(query: types.CallbackQuery, state: FSMContext):
     to_location = get_selected_districts(query.message.reply_markup)
     await state.update_data(to_location=to_location)
@@ -222,8 +335,8 @@ async def process_address(message: types.Message, state: FSMContext):
     regions = fetch_districts_details(token[2])
     async with state.proxy() as data:
         data["address"] = message.text
-        data['regions'] = regions
-        data['end'] = False
+        data["regions"] = regions
+        data["end"] = False
     btn = regions_btn(regions)
     await message.answer("Please select region:", reply_markup=btn)
     await LoadCreationState.region.set()
@@ -252,53 +365,30 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
             await LoadCreationState.date_delivery.set()
             return
         data["date_delivery"] = message.text
-        # data["from_location"], data["to_location"] = [1], [1]
-        response = client_add_load(data=data.as_dict(), token=token)
+        image_blob = url_to_blob(data["image"])
+        data.pop("image")
+        print(image_blob)
+        print(data.as_dict())
+        response = client_add_load(
+            data=data.as_dict(), token=token, image_blob=image_blob
+        )
     await message.answer(f"Load details saved successfully!{response}")
     await state.finish()
 
 
-@dp.callback_query_handler(lambda c: c.data=="notifications")
+# ###########################################################################
+# ###########################################################################
+# ###########################################################################
+# Query Handlers
+
+
+@dp.callback_query_handler(lambda c: c.data == "notifications")
 async def get_notifications_handler(query: types.CallbackQuery):
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
     notifications = get_notifications(token)
     await bot.send_message(query.message.chat.id, text=str(notifications))
-
-
-@dp.callback_query_handler(
-    lambda c: c.data in ["driver", "dispatcher", "client"],
-    state=RegistrationState.role,
-)
-async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
-    role = query.data
-    await state.update_data(role=role)
-    data = await state.get_data()
-    context_data = {
-        "phonenumber": data["phonenumber"],
-        "first_name": data["fullname"][0],
-        "last_name": data["fullname"][-1],
-        "telegram_id": query.from_user.id,
-        "password": data["password"],
-        "user_type": data["role"],
-    }
-    response = register_user(context_data)
-    await TokenStorageState.token.set()
-    await state.set_state(TokenStorageState.token)
-    await state.update_data(token=response.get("access"))
-    insert_user(telegram_id=query.from_user.id, token=response.get("access"))
-    user_button = {
-        "driver": driver_buttons,
-        "client": client_buttons,
-        "dispatcher": dispatcher_buttons,
-    }
-    await state.finish()
-    await bot.send_message(
-        chat_id=query.message.chat.id,
-        text=str(response),
-        reply_markup=user_button[response["user_type"]],
-    )
 
 
 @dp.callback_query_handler(lambda c: c.data == "request_dispatcher_to_driver")
