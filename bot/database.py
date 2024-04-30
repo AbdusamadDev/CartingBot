@@ -13,6 +13,15 @@ def create_table():
     conn.commit()
     conn.close()
 
+def clear_database():
+    conn = sqlite3.connect("../database.sqlite3")
+    c = conn.cursor()
+    c.execute("DELETE FROM users")
+    conn.commit()
+    conn.close()
+
+
+
 
 # Function to insert a new user into the "users" table
 def insert_user(telegram_id, token):

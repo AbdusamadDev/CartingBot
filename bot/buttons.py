@@ -134,6 +134,7 @@ def get_district_selection_buttons(districts, end=False):
 def get_choices_button():
     request = requests.get(DOMAIN + "/clients/load-choices/")
     response = request.json()
+    print(response)
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
         *[
@@ -143,5 +144,9 @@ def get_choices_button():
             for choice in response["choices"]
         ]
     )
+    return keyboard
 
-take_me_back_markup = InlineKeyboardMarkup().add(InlineKeyboardButton(text="Main menu", callback_data="main_menu"))
+
+take_me_back_markup = InlineKeyboardMarkup().add(
+    InlineKeyboardButton(text="Main menu", callback_data="main_menu")
+)

@@ -16,6 +16,7 @@ from utils import *
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot=bot, storage=MemoryStorage())
 auth_token = None
+# clear_database()
 create_table()
 
 
@@ -113,7 +114,6 @@ async def process_sms_code(message: types.Message, state: FSMContext):
         await state.finish()
 
 
-
 @dp.message_handler(state=RegistrationState.password)
 async def process_password(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
@@ -127,6 +127,25 @@ async def process_password(message: types.Message, state: FSMContext):
     )
     await message.answer("Who do you want to register as?", reply_markup=keyboard)
     await RegistrationState.role.set()
+
+
+@dp.message_handler(
+    content_types=types.ContentType.CONTACT, state=RegistrationState.phonenumber
+)
+async def handle_contact(message: types.Message, state: FSMContext):
+    contact = message.contact
+    if (
+        contact.user_id == message.from_user.id
+    ):  # Ensuring the contact belongs to the sender
+        phonenumber = contact.phone_number
+        async with state.proxy() as data:
+            data["phonenumber"] = phonenumber
+        await message.answer(
+            f"4-digit activation code was immediately sent to your phone number: {message.text}, please enter this code"
+        )
+        await RegistrationState.sms_code.set()
+    else:
+        await message.answer("Please send your own contact information.")
 
 
 @dp.callback_query_handler(
@@ -242,7 +261,7 @@ async def process_product_info(message: types.Message, state: FSMContext):
     await LoadCreationState.next()
 
 
-@dp.callback_query_handler(text_contains="choice")
+@dp.callback_query_handler(text_contains="choice", state=LoadCreationState.product_type)
 async def process_choice_handler(query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data["product_type"] = query.data.split(":")[-1]
@@ -290,12 +309,10 @@ async def process_district_callback(query: types.CallbackQuery, state: FSMContex
         token = get_user_by_telegram_id(query.from_user.id)
         regions = fetch_districts_details(token[2])
         btn = regions_btn(regions)
-        with state.proxy as data:
-            region = data["region"]
-            await query.message.edit_text(
-                f"Which districts of {region} should driver drive through?",
-                reply_markup=btn,
-            )
+        await query.message.edit_text(
+            f"Which districts of the region should driver drive through?",
+            reply_markup=btn,
+        )
         await LoadCreationState.region.set()
     else:
         selected_district = query.data.split(":")[-1]
@@ -356,11 +373,9 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
         data["date_delivery"] = message.text
         image_blob = url_to_blob(data["image"])
         data.pop("image")
-        response = client_add_load(
-            data=data.as_dict(), token=token, image_blob=image_blob
-        )
+        client_add_load(data=data.as_dict(), token=token, image_blob=image_blob)
     await message.answer(
-        f"Cool, your load {data['name']} was successfully added!",
+        f"Cool, your load {data['product_name']} was successfully added!",
         reply_markup=take_me_back_markup,
     )
     await state.finish()
@@ -374,10 +389,17 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(text_contains="main_menu")
 async def main_menu_callback_handler(query: types.CallbackQuery):
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        print(token)
+        token = token[2]
+    profile_details = get_profile_details(token)
+    print(profile_details)
+    a = list(profile_details.keys())[0]
     await bot.send_message(
         chat_id=query.message.chat.id,
         text=f"Welcome back  {query.from_user.username}, please an action you want to perform!",
-        reply_markup=get_buttons_by_role(),
+        reply_markup=get_buttons_by_role(a),
     )
 
 
