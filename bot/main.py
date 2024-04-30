@@ -16,62 +16,85 @@ from utils import *
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot=bot, storage=MemoryStorage())
 auth_token = None
-# clear_database()
+clear_database()
 create_table()
 
 
-# ###########################################################################
-# ###########################################################################
-# ###########################################################################
-# Start command
 @dp.message_handler(commands=["start"], state="*")
-async def start(message: types.Message, state: FSMContext):
-    token = get_user_by_telegram_id(message.from_user.id)
-    if token:
-        token = token[2]
-        profile_details = get_profile_details(token)
-        if profile_details:
-            if "detail" in profile_details:
-                await message.answer(
-                    "🚫 Authentication process failed!",
-                )
-                await asyncio.sleep(0.6)
-                await message.delete()
-                await message.answer(
-                    "Let's process a quick registration, please enter your phone number in format: +998 (xx) xxx-xx-xx [e.g `+998991234567`]"
-                )
-                await RegistrationState.phonenumber.set()
-            else:
-                a = list(profile_details.keys())[0]
-                await message.answer(
-                    f"Welcome {message.from_user.username}, Pleased to see you again! What do we do today?",
-                    reply_markup=get_buttons_by_role(
-                        profile_details[a]["user"]["user_type"]
-                    ),
-                )
-        else:
+async def start_handler(message: types.Message, state: FSMContext):
+    user = get_user_by_telegram_id(message.from_user.id)
+    if user:
+        print("TOKEN: %s" % user[-1])
+        profile = get_profile_details(user[2])
+        # User exists in database
+        if profile["status_code"] == 401:
+            # User in database but doesnt have valid token to perform actions
             await message.answer(
-                "🚫 Oops, Unable to recognize you, please Enter your phonenumber for registration."
+                "Please enter your phonenumber, cause I cannot recognize you"
             )
-            await RegistrationState.phonenumber.set()
+            await LoginState.phonenumber.set()
+        else:
+            # User has valid token and authenticated
+            print("Profile: ", profile)
+            user_type = list(profile["message"].keys())[0]
+            await message.answer(
+                "Welcome back homie, select actions:",
+                reply_markup=get_buttons_by_role(user_type),
+            )
     else:
-        btn = types.ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    types.KeyboardButton(
-                        text="Share my phone number", request_contact=True
-                    )
-                ]
-            ],
-            resize_keyboard=True,
-            one_time_keyboard=True,
-        )
-        await message.answer("👋")
-        await message.answer(
-            "Welcome to the Carting Logistics Service bot! \n\nLet's register your details for the service. Please enter your phone number in format:  +998 (xx) xxx-xx-xx [e.g `+998991234567`]",
-            reply_markup=btn,
-        )
+        # Fresh registration, user is not in database
+        await message.answer("New registration! enter phonenumber:")
         await RegistrationState.phonenumber.set()
+
+
+# ###########################################################################
+# ###########################################################################
+# ###########################################################################
+# Login
+
+
+@dp.message_handler(
+    state=LoginState.phonenumber, content_types=types.ContentType.CONTACT
+)
+async def login(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data["phonenumber"] = message.contact.phone_number
+    await message.answer(f"Enter your password please!")
+    await LoginState.password.set()
+
+
+@dp.message_handler(state=LoginState.phonenumber)
+async def login(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data["phonenumber"] = message.text
+    await message.answer(f"Enter your password please!")
+    await LoginState.password.set()
+
+
+@dp.message_handler(state=LoginState.password)
+async def process_password(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data["password"] = message.text
+    await message.delete()
+    context = await state.get_data()
+    response = login_user(phonenumber=context.get("phonenumber"), password=message.text)
+    if response["status_code"] == 401:
+        await message.answer(
+            "Authentication process failed! please try again by entering your phone number",
+            reply_markup=contact_btn,
+        )
+        await LoginState.phonenumber.set()
+    elif response["status_code"] == 200:
+        # database will be updated with the resopnse access token
+        # also the menu button will be sent to user based on the user_type
+        new_token = response["message"]["access"]
+        update_token(message.from_user.id, new_token=new_token)
+        print(response)
+        await message.answer(
+            f"Welcome {message.from_user.username}, Pleased to see you again! What do we do today?",
+            reply_markup=get_buttons_by_role(response["message"]["user_type"]),
+        )
+        await state.finish()
 
 
 # ###########################################################################
@@ -165,15 +188,17 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
         "user_type": data["role"],
     }
     response = register_user(context_data)
-    if "detail" in response.keys():
+    if response["status_code"] == 400:
         await bot.send_message(
             "Sorry, Unable to recognize you, please enter your phone number for quick registration in this format: +998 (xx) xxx-xx-xx [e.g `+998991234567`]"
         )
         await RegistrationState.phonenumber.set()
     await TokenStorageState.token.set()
     await state.set_state(TokenStorageState.token)
-    await state.update_data(token=response.get("access"))
-    insert_user(telegram_id=query.from_user.id, token=response.get("access"))
+    print(response)
+    token = response["message"]["access"]
+    await state.update_data(token=token)
+    insert_user(telegram_id=query.from_user.id, token=token)
     user_button = {
         "driver": driver_buttons,
         "client": client_buttons,
@@ -183,7 +208,7 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
     await bot.send_message(
         chat_id=query.message.chat.id,
         text=f"🥳🥳🥳\nCongratulations {context_data['first_name']} {context_data['last_name']}!\n\n Now you are shiny part of Carting Logistics Service!\n\Please select the action you want to perform.",
-        reply_markup=user_button[response["user_type"]],
+        reply_markup=user_button[response["message"]["user_type"]],
     )
 
 
@@ -395,7 +420,7 @@ async def main_menu_callback_handler(query: types.CallbackQuery):
         token = token[2]
     profile_details = get_profile_details(token)
     print(profile_details)
-    a = list(profile_details.keys())[0]
+    a = list(profile_details["message"].keys())[0]
     await bot.send_message(
         chat_id=query.message.chat.id,
         text=f"Welcome back  {query.from_user.username}, please an action you want to perform!",
@@ -513,11 +538,11 @@ async def profile_view_callback(query: types.CallbackQuery, state: FSMContext):
     profile_details = get_profile_details(token[2])
     if profile_details:
         profile_message = f"Profile details:\n{profile_details}"
-        a = list(profile_details.keys())[0]
+        a = list(profile_details["message"].keys())[0]
         await query.message.answer(
             profile_message,
             reply_markup=get_buttons_by_role(
-                profile_details[a]["user"]["user_type"],
+                profile_details["message"][a]["user"]["user_type"],
             ),
         )
     else:

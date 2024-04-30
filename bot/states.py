@@ -29,3 +29,8 @@ class DeliveryRequestState(StatesGroup):
 
 class TokenStorageState(StatesGroup):
     token = State()
+
+
+class LoginState(StatesGroup):
+    phonenumber = State()
+    password = State()

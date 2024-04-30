@@ -1,4 +1,9 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import (
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+)
 import requests
 
 from conf import DOMAIN
@@ -56,6 +61,13 @@ def get_loads_button(indices):
             )
         )
     return keyboard
+
+
+contact_btn = ReplyKeyboardMarkup(
+    keyboard=[[KeyboardButton(text="Share my phone number", request_contact=True)]],
+    resize_keyboard=True,
+    one_time_keyboard=True,
+)
 
 
 def driver_my_loads_buttons(indices):

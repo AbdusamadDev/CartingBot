@@ -1,6 +1,5 @@
 import requests
 from conf import DOMAIN
-import json
 
 
 def verify_phonenumber(phonenumber, code):
@@ -15,15 +14,41 @@ def verify_phonenumber(phonenumber, code):
 def register_user(data):
     request = requests.post(DOMAIN + "/accounts/register/", json=data)
     response = request.json()
-    return response
+    status_code = request.status_code
+    if "detail" in response.keys() and status_code == 400:
+        print("400 TASHADI")
+        return {
+            "message": "Account with this phone number already registered",
+            "status_code": status_code,
+        }
+    return {"message": response, "status_code": status_code}
 
 
 def get_profile_details(token):
     request = requests.get(
         DOMAIN + "/accounts/profile/", headers={"Authorization": f"Bearer {token}"}
     )
+    status_code = request.status_code
     response = request.json()
-    return response
+    if "code" in response and status_code == 401:
+        print("401 TASHADI")
+        return {"message": "token_not_valid", "status_code": status_code}
+    else:
+        return {"message": response, "status_code": status_code}
+
+
+def login_user(phonenumber, password):
+    request = requests.post(
+        DOMAIN + "/accounts/login/",
+        data={"phonenumber": phonenumber, "password": password},
+    )
+    response = request.json()
+    if request.status_code == 401:
+        return {
+            "message": response["error"],
+            "status_code": 401,
+        }  # Authentication failed
+    return {"message": response, "status_code": 200}
 
 
 def get_my_loads(token):
@@ -107,7 +132,7 @@ def client_add_load(token, data, image_blob):
         # URL of your Django app endpoint for load creation
         django_url = DOMAIN + "/clients/load/"
         # Prepare the files dictionary to send the image as a file
-        files = {'product_image': ('filename.jpg', image_blob, 'image/jpeg')}
+        files = {"product_image": ("filename.jpg", image_blob, "image/jpeg")}
         # Note: Adjust the MIME type ('image/jpeg') as necessary for your image format
 
         # Ensure other data is sent as part of the data parameter
@@ -115,7 +140,7 @@ def client_add_load(token, data, image_blob):
             django_url,
             headers={"Authorization": f"Bearer {token}"},
             data=data,
-            files=files  # Add the files parameter here
+            files=files,  # Add the files parameter here
         )
 
         return response.json()
