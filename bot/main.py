@@ -3,12 +3,12 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram import executor, Bot, Dispatcher, types
 from aiogram.dispatcher import FSMContext
 import logging
-import asyncio
 import re
 
 from conf import TOKEN
 from database import *
 from buttons import *
+from parsers import *
 from states import *
 from client import *
 from utils import *
@@ -16,7 +16,7 @@ from utils import *
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot=bot, storage=MemoryStorage())
 auth_token = None
-clear_database()
+# clear_database()
 create_table()
 
 
@@ -24,13 +24,12 @@ create_table()
 async def start_handler(message: types.Message, state: FSMContext):
     user = get_user_by_telegram_id(message.from_user.id)
     if user:
-        print("TOKEN: %s" % user[-1])
         profile = get_profile_details(user[2])
         # User exists in database
         if profile["status_code"] == 401:
             # User in database but doesnt have valid token to perform actions
             await message.answer(
-                "Please enter your phonenumber, cause I cannot recognize you"
+                "🚫 Sorry, unable to recognize you, please enter you phone number to login."
             )
             await LoginState.phonenumber.set()
         else:
@@ -38,12 +37,14 @@ async def start_handler(message: types.Message, state: FSMContext):
             print("Profile: ", profile)
             user_type = list(profile["message"].keys())[0]
             await message.answer(
-                "Welcome back homie, select actions:",
+                f"Welcome back {message.from_user.username}, What do we do today?",
                 reply_markup=get_buttons_by_role(user_type),
             )
     else:
         # Fresh registration, user is not in database
-        await message.answer("New registration! enter phonenumber:")
+        await message.answer(
+            "Welcom to Carting Logistics Service bot! Please start typing your phone number in following format: +998 (xx) xxx-xx-xx [e.g +998941234567]"
+        )
         await RegistrationState.phonenumber.set()
 
 
@@ -59,7 +60,7 @@ async def start_handler(message: types.Message, state: FSMContext):
 async def login(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["phonenumber"] = message.contact.phone_number
-    await message.answer(f"Enter your password please!")
+    await message.answer(f"Please enter your password.")
     await LoginState.password.set()
 
 
@@ -67,7 +68,7 @@ async def login(message: types.Message, state: FSMContext):
 async def login(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["phonenumber"] = message.text
-    await message.answer(f"Enter your password please!")
+    await message.answer(f"Please enter your password.")
     await LoginState.password.set()
 
 
@@ -80,7 +81,7 @@ async def process_password(message: types.Message, state: FSMContext):
     response = login_user(phonenumber=context.get("phonenumber"), password=message.text)
     if response["status_code"] == 401:
         await message.answer(
-            "Authentication process failed! please try again by entering your phone number",
+            "🚫 Authentication process failed! please try again by entering your phone number",
             reply_markup=contact_btn,
         )
         await LoginState.phonenumber.set()
@@ -132,9 +133,9 @@ async def process_sms_code(message: types.Message, state: FSMContext):
         await RegistrationState.password.set()
     else:
         await message.answer(
-            " Activation code is invalid. Try again by clicking /start"
+            "🚫 Activation code is invalid. Try entering activation code again."
         )
-        await state.finish()
+        await RegistrationState.sms_code.set()
 
 
 @dp.message_handler(state=RegistrationState.password)
@@ -307,7 +308,7 @@ async def process_product_count(message: types.Message, state: FSMContext):
             await LoadCreationState.product_count.set()
             return
         data["product_count"] = int(message.text)
-    await message.answer("Where is your load located? Can you provide its location?")
+    await message.answer("Where is your load located? Can you provide its address?")
     await LoadCreationState.address.set()
 
 
@@ -423,7 +424,7 @@ async def main_menu_callback_handler(query: types.CallbackQuery):
     a = list(profile_details["message"].keys())[0]
     await bot.send_message(
         chat_id=query.message.chat.id,
-        text=f"Welcome back  {query.from_user.username}, please an action you want to perform!",
+        text=f"Welcome back  {query.from_user.username}, please select an action you want to perform!",
         reply_markup=get_buttons_by_role(a),
     )
 
@@ -448,7 +449,7 @@ async def request_for_load(query: types.CallbackQuery, state: FSMContext):
     ]
     await bot.send_message(
         chat_id=query.message.chat.id,
-        text=f"Choose driver to : {response}",
+        text=get_parsed_drivers_list(driver_list=response),
         reply_markup=get_driver_buttons(driver_data),
     )
 

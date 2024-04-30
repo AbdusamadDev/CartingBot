@@ -91,7 +91,7 @@ def request_delivery(token, load_id, user_id):
     request = requests.post(
         DOMAIN + "/notifications/create/",
         headers={"Authorization": f"Bearer {token}"},
-        data={"load": int(load_id), "to_user": int(user_id)},
+        data={"load_id": int(load_id), "to_user": int(user_id), "action": "request_load"},
     )
     response = request.json()
     return response
