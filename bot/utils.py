@@ -1,9 +1,21 @@
 import re
 import requests
 
-def is_valid(phone_number):
-    # Simplified validation check
-    return bool(re.match(r"^(?:\+?998)?9[01234579]\d{7}$", phone_number))
+def is_valid(input_string):
+    # Check if input starts with '+'
+    if not input_string.startswith('+'):
+        return False
+    
+    # Check if length is exactly 13 characters
+    if len(input_string) != 14:
+        return False
+    
+    # Check if all characters after '+' are digits
+    if not input_string[1:].isdigit():
+        return False
+    
+    # If all conditions are met, return True
+    return True
 
 def get_districts(regions, selected_region):
     # Use next to find the first matching region and return its districts
@@ -31,4 +43,4 @@ def url_to_blob(image_url):
         return None
 
 if __name__ == "__main__":
-    print(is_valid("+99840055565"))
+    print(is_valid("998940055565"))
