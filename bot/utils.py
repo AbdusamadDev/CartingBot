@@ -7,7 +7,7 @@ def is_valid(input_string):
         return False
     
     # Check if length is exactly 13 characters
-    if len(input_string) != 14:
+    if len(input_string) != 12:
         return False
     
     # Check if all characters after '+' are digits

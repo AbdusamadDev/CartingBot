@@ -113,19 +113,6 @@ async def process_sms_code(message: types.Message, state: FSMContext):
         await state.finish()
 
 
-# @dp.message_handler(state=RegistrationState.fullname)
-# async def process_fullname(message: types.Message, state: FSMContext):
-#     async with state.proxy() as data:
-#         if len(message.text.split(" ")) != 2:
-#             await message.answer(
-#                 "🚫 Please enter valid fullname in this format: `John Doe`"
-#             )
-#             await RegistrationState.fullname.set()
-#             return
-#         data["fullname"] = message.text
-#     await message.answer("Please enter your password:")
-#     await RegistrationState.password.set()
-
 
 @dp.message_handler(state=RegistrationState.password)
 async def process_password(message: types.Message, state: FSMContext):
