@@ -4,7 +4,7 @@ from datetime import datetime
 
 # Function to create a SQLite database and the "users" table
 def create_table():
-    conn = sqlite3.connect("../db.sqlite3")
+    conn = sqlite3.connect("../database.sqlite3")
     c = conn.cursor()
     c.execute(
         """CREATE TABLE IF NOT EXISTS users 
