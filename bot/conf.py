@@ -1,2 +1,2 @@
-TOKEN = "5911456380:AAFL6rxq-qLLJJywHEzWTo5JAg2Ydd1NH0U"
+TOKEN = "6001980782:AAEubKbK3PmqEoetDByFMh8ZhVhAixXAWvA"
 DOMAIN = "https://new-api.carting.uz"
