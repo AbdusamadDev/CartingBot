@@ -104,10 +104,8 @@ async def process_sms_code(message: types.Message, state: FSMContext):
         phonenumber=context.get("phonenumber"), code=message.text
     )
     if ("sms_code_status" in response.keys()) and (response["sms_code_status"]):
-        await message.answer(
-            "Now please enter your fullname in this format: `John Doe`"
-        )
-        await RegistrationState.fullname.set()
+        await message.answer("Now please enter a strong password!`")
+        await RegistrationState.password.set()
     else:
         await message.answer(
             " Activation code is invalid. Try again by clicking /start"
@@ -115,18 +113,18 @@ async def process_sms_code(message: types.Message, state: FSMContext):
         await state.finish()
 
 
-@dp.message_handler(state=RegistrationState.fullname)
-async def process_fullname(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        if len(message.text.split(" ")) != 2:
-            await message.answer(
-                "🚫 Please enter valid fullname in this format: `John Doe`"
-            )
-            await RegistrationState.fullname.set()
-            return
-        data["fullname"] = message.text
-    await message.answer("Please enter your password:")
-    await RegistrationState.password.set()
+# @dp.message_handler(state=RegistrationState.fullname)
+# async def process_fullname(message: types.Message, state: FSMContext):
+#     async with state.proxy() as data:
+#         if len(message.text.split(" ")) != 2:
+#             await message.answer(
+#                 "🚫 Please enter valid fullname in this format: `John Doe`"
+#             )
+#             await RegistrationState.fullname.set()
+#             return
+#         data["fullname"] = message.text
+#     await message.answer("Please enter your password:")
+#     await RegistrationState.password.set()
 
 
 @dp.message_handler(state=RegistrationState.password)
@@ -154,8 +152,8 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     context_data = {
         "phonenumber": data["phonenumber"],
-        "first_name": data["fullname"].split(" ")[0],
-        "last_name": data["fullname"].split(" ")[-1],
+        "first_name": query.from_user.first_name,
+        "last_name": query.from_user.last_name,
         "telegram_id": query.from_user.id,
         "password": data["password"],
         "user_type": data["role"],

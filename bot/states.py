@@ -2,7 +2,6 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 
 class RegistrationState(StatesGroup):
-    fullname = State()
     phonenumber = State()
     sms_code = State()
     role = State()
