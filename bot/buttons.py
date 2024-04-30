@@ -1,17 +1,20 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+import requests
+
+from conf import DOMAIN
 
 
 notifications_button = InlineKeyboardButton(
-    text="Show Notifications",
+    text="🔔 Show my notifications",
     callback_data="notifications",
 )
 
 client_buttons = InlineKeyboardMarkup(row_width=2)
 client_btn = [
     notifications_button,
-    InlineKeyboardButton(text="Show Loads", callback_data="show_my_load"),
-    InlineKeyboardButton(text="Add Load", callback_data="add_load"),
-    InlineKeyboardButton(text="My profile", callback_data="profile_view"),
+    InlineKeyboardButton(text="📦 My loads", callback_data="show_my_load"),
+    InlineKeyboardButton(text="➕ Add load", callback_data="add_load"),
+    InlineKeyboardButton(text="👤 My profile", callback_data="profile_view"),
 ]
 client_buttons.add(*client_btn)
 
@@ -19,8 +22,8 @@ client_buttons.add(*client_btn)
 driver_buttons = InlineKeyboardMarkup()
 driver_btn = [
     notifications_button,
-    InlineKeyboardButton(text="Show my Loads", callback_data="show_load"),
-    InlineKeyboardButton(text="My profile", callback_data="profile_view"),
+    InlineKeyboardButton(text="📦 My loads", callback_data="show_load"),
+    InlineKeyboardButton(text="👤 My profile", callback_data="profile_view"),
 ]
 driver_buttons.add(*driver_btn)
 
@@ -28,25 +31,27 @@ dispatcher_buttons = InlineKeyboardMarkup()
 dispatcher_btn = [
     notifications_button,
     InlineKeyboardButton(
-        text="Show All loads", callback_data="dispatcher_show_all_loads"
+        text="📦📦 All loads", callback_data="dispatcher_show_all_loads"
     ),
     InlineKeyboardButton(
-        text="Request GET Driver Load [further]",
+        text="🚚 Request delivery from drivers",
         callback_data="request_dispatcher_to_driver",
     ),
-    InlineKeyboardButton(text="Show Drivers", callback_data="dispatcher_show_drivers"),
-    InlineKeyboardButton(text="Show my Loads", callback_data="dispatcher_get_my_loads"),
-    InlineKeyboardButton(text="My profile", callback_data="profile_view"),
+    InlineKeyboardButton(
+        text="👥 Available Drivers", callback_data="dispatcher_show_drivers"
+    ),
+    InlineKeyboardButton(text="📦 My Loads", callback_data="dispatcher_get_my_loads"),
+    InlineKeyboardButton(text="👤 My profile", callback_data="profile_view"),
 ]
 dispatcher_buttons.add(*dispatcher_btn)
 
 
 def get_loads_button(indices):
     keyboard = InlineKeyboardMarkup()
-    for load_id in indices:
+    for load_id, name in indices:
         keyboard.add(
             InlineKeyboardButton(
-                text=f"Request for load: {load_id}",
+                text=f"📦 {name}",
                 callback_data=f"dispatcher_driver_delivery_request_{load_id}",
             )
         )
@@ -55,10 +60,10 @@ def get_loads_button(indices):
 
 def driver_my_loads_buttons(indices):
     keyboard = InlineKeyboardMarkup(row_width=1)
-    for load_id, client_id in indices:
+    for load_name, load_id, client_id in indices:
         keyboard.add(
             InlineKeyboardButton(
-                text=f"Request for {load_id}",
+                text=f"✅ {load_name}",
                 callback_data=f"driver_show_load_{load_id}_{client_id}",
             )
         )
@@ -70,7 +75,7 @@ def get_driver_buttons(indices):
     for driver_id, fullname in indices:
         keyboard.add(
             InlineKeyboardButton(
-                text=f"Request for {fullname}",
+                text=f"👤 {fullname}",
                 callback_data=f"driver_get_load_{driver_id}",
             )
         )
@@ -91,10 +96,11 @@ def regions_btn(regions: list):
     keyboard.add(
         *[
             InlineKeyboardButton(
-            text=region['name'],
-            callback_data=f"region:{region['pk']}",
-        )
-        for region in regions]
+                text=f'📍 {region["name"]}',
+                callback_data=f"region:{region['pk']}",
+            )
+            for region in regions
+        ]
     )
     return keyboard
 
@@ -105,20 +111,37 @@ def get_district_selection_buttons(districts, end=False):
     keyboard.add(
         *[
             InlineKeyboardButton(
-            text=district['name'],
-            callback_data=f"district:{district['pk']}",
-        )
-        for district in districts],
+                text=f'📍 {district["name"]}',
+                callback_data=f"district:{district['pk']}",
+            )
+            for district in districts
+        ],
     )
     if end:
         next_btn = InlineKeyboardButton(
-                text="Next",
-                callback_data="next_to_receiver_phone_number",
-            ) 
+            text="Next ⏩",
+            callback_data="next_to_receiver_phone_number",
+        )
     else:
         next_btn = InlineKeyboardButton(
-                text="Next",
-                callback_data="district_next",
-            )
+            text="Next ⏩",
+            callback_data="district_next",
+        )
     keyboard.row(next_btn)
     return keyboard
+
+
+def get_choices_button():
+    request = requests.get(DOMAIN + "/clients/load-choices/")
+    response = request.json()
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard.add(
+        *[
+            InlineKeyboardButton(
+                text=f"✔️ {choice[-1]}", callback_data=f"choice:{choice[0]}"
+            )
+            for choice in response["choices"]
+        ]
+    )
+
+take_me_back_markup = InlineKeyboardMarkup().add(InlineKeyboardButton(text="Main menu", callback_data="main_menu"))

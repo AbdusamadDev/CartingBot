@@ -1,16 +1,17 @@
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram import executor, Bot, Dispatcher, types
 from aiogram.dispatcher import FSMContext
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.types import ContentType
-from conf import TOKEN
-from client import *
-from buttons import *
-from database import *
-from states import *
 import logging
-from utils import *
+import asyncio
 import re
+
+from conf import TOKEN
+from database import *
+from buttons import *
+from states import *
+from client import *
+from utils import *
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot=bot, storage=MemoryStorage())
@@ -28,46 +29,46 @@ async def start(message: types.Message, state: FSMContext):
     if token:
         token = token[2]
         profile_details = get_profile_details(token)
-
         if profile_details:
-            if profile_details:
-                if "detail" in profile_details:
-                    await message.answer(
-                        "Not authenticated, please provide yout phonenumber",
-                    )
-                    await RegistrationState.phonenumber.set()
-                else:
-                    a = list(profile_details.keys())[0]
-                    await message.answer(
-                        f"Wassup Mr. User! Here are your profile details:\n{profile_details}",
-                        reply_markup=get_buttons_by_role(
-                            profile_details[a]["user"]["user_type"]
-                        ),
-                    )
-            else:
+            if "detail" in profile_details:
                 await message.answer(
-                    "Welcome back! Please proceed with the registration process."
+                    "🚫 Authentication process failed!",
+                )
+                await asyncio.sleep(0.6)
+                await message.delete()
+                await message.answer(
+                    "Let's process a quick registration, please enter your phone number in format: +998 (xx) xxx-xx-xx [e.g `+998991234567`]"
                 )
                 await RegistrationState.phonenumber.set()
+            else:
+                a = list(profile_details.keys())[0]
+                await message.answer(
+                    f"Welcome {message.from_user.username}, Pleased to see you again! What do we do today?",
+                    reply_markup=get_buttons_by_role(
+                        profile_details[a]["user"]["user_type"]
+                    ),
+                )
         else:
             await message.answer(
-                "Failed to fetch profile details. Please proceed with the registration process."
+                "🚫 Oops, Unable to recognize you, please Enter your phonenumber for registration."
             )
             await RegistrationState.phonenumber.set()
     else:
+        btn = types.ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    types.KeyboardButton(
+                        text="Share my phone number", request_contact=True
+                    )
+                ]
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True,
+        )
+        await message.answer("👋")
         await message.answer(
-            "Hi, let's create an account. Please click the button below to share your phone number:",
-            reply_markup=types.ReplyKeyboardMarkup(
-                keyboard=[
-                    [
-                        types.KeyboardButton(
-                            text="Share my phone number", request_contact=True
-                        )
-                    ]
-                ],
-                resize_keyboard=True,
-                one_time_keyboard=True,
-            ),
+            "Welcome to the Carting Logistics Service bot! \n\nLet's register your details for the service. Please enter your phone number in format:  +998 (xx) xxx-xx-xx [e.g `+998991234567`]",
+            reply_markup=btn,
         )
         await RegistrationState.phonenumber.set()
 
@@ -81,35 +82,17 @@ async def start(message: types.Message, state: FSMContext):
 @dp.message_handler(state=RegistrationState.phonenumber)
 async def process_phonenumber(message: types.Message, state: FSMContext):
     if not is_valid(message.text):
-        await message.answer("Please enter a valid phone number.")
+        await message.answer(
+            "🚫 Sorry, this didn't work, try entering valid phone number."
+        )
         await RegistrationState.phonenumber.set()
         return
     async with state.proxy() as data:
         data["phonenumber"] = message.text
     await message.answer(
-        f"SMS activation code sent to the phone number: {message.text}."
-        "Please enter the 4 digit code"
+        f"4-digit activation code was immediately sent to your phone number: {message.text}, please enter this code"
     )
     await RegistrationState.sms_code.set()
-
-
-@dp.message_handler(
-    content_types=types.ContentType.CONTACT, state=RegistrationState.phonenumber
-)
-async def handle_contact(message: types.Message, state: FSMContext):
-    contact = message.contact
-    if (
-        contact.user_id == message.from_user.id
-    ):  # Ensuring the contact belongs to the sender
-        phonenumber = contact.phone_number
-        async with state.proxy() as data:
-            data["phonenumber"] = phonenumber
-        await message.answer(
-            f"Please enter 4 digit code which was sent to your phonenumber: {phonenumber}."
-        )
-        await RegistrationState.sms_code.set()
-    else:
-        await message.answer("Please send your own contact information.")
 
 
 @dp.message_handler(state=RegistrationState.sms_code)
@@ -121,18 +104,24 @@ async def process_sms_code(message: types.Message, state: FSMContext):
         phonenumber=context.get("phonenumber"), code=message.text
     )
     if ("sms_code_status" in response.keys()) and (response["sms_code_status"]):
-        await message.answer("Cool, now enter your fullname in this order: `John Doe`")
+        await message.answer(
+            "Now please enter your fullname in this format: `John Doe`"
+        )
         await RegistrationState.fullname.set()
     else:
-        await message.answer("SMS code is not valid")
-        await RegistrationState.sms_code.set()
+        await message.answer(
+            " Activation code is invalid. Try again by clicking /start"
+        )
+        await state.finish()
 
 
 @dp.message_handler(state=RegistrationState.fullname)
 async def process_fullname(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         if len(message.text.split(" ")) != 2:
-            await message.answer("Please enter your fullname in this order: `John Doe`")
+            await message.answer(
+                "🚫 Please enter valid fullname in this format: `John Doe`"
+            )
             await RegistrationState.fullname.set()
             return
         data["fullname"] = message.text
@@ -147,11 +136,11 @@ async def process_password(message: types.Message, state: FSMContext):
     await message.delete()
     keyboard = InlineKeyboardMarkup(row_width=1)
     keyboard.add(
-        InlineKeyboardButton(text="Driver", callback_data="driver"),
-        InlineKeyboardButton(text="Dispatcher", callback_data="dispatcher"),
-        InlineKeyboardButton(text="Client", callback_data="client"),
+        InlineKeyboardButton(text="🚛 Driver", callback_data="driver"),
+        InlineKeyboardButton(text="👨‍🔧 Dispatcher", callback_data="dispatcher"),
+        InlineKeyboardButton(text="👤Client", callback_data="client"),
     )
-    await message.answer("Please select your role:", reply_markup=keyboard)
+    await message.answer("Who do you want to register as?", reply_markup=keyboard)
     await RegistrationState.role.set()
 
 
@@ -165,8 +154,8 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     context_data = {
         "phonenumber": data["phonenumber"],
-        "first_name": data["fullname"][0],
-        "last_name": data["fullname"][-1],
+        "first_name": data["fullname"].split(" ")[0],
+        "last_name": data["fullname"].split(" ")[-1],
         "telegram_id": query.from_user.id,
         "password": data["password"],
         "user_type": data["role"],
@@ -174,7 +163,7 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
     response = register_user(context_data)
     if "detail" in response.keys():
         await bot.send_message(
-            "Unable to authenticate, please retry, enter phonenumber",
+            "Sorry, Unable to recognize you, please enter your phone number for quick registration in this format: +998 (xx) xxx-xx-xx [e.g `+998991234567`]"
         )
         await RegistrationState.phonenumber.set()
     await TokenStorageState.token.set()
@@ -189,7 +178,7 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
     await state.finish()
     await bot.send_message(
         chat_id=query.message.chat.id,
-        text=str(response),
+        text=f"🥳🥳🥳\nCongratulations {context_data['first_name']} {context_data['last_name']}!\n\n Now you are shiny part of Carting Logistics Service!\n\Please select the action you want to perform.",
         reply_markup=user_button[response["user_type"]],
     )
 
@@ -202,8 +191,9 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(lambda query: query.data == "add_load")
 async def process_add_load_callback(query: types.CallbackQuery, state: FSMContext):
-    print("Button is being clicked")
-    await bot.send_message(query.message.chat.id, text="Provide image")
+    await bot.send_message(
+        query.message.chat.id, text="Cool now, Please send your load's picture please!"
+    )
     await LoadCreationState.image.set()
 
 
@@ -222,15 +212,14 @@ async def add_load_handler(message: types.Message, state: FSMContext):
     The function extracts the URL of the last photo sent by the user, saves it in the state,
     and asks the user to provide the name of the load next.
     """
-    print("Load image is being processed")
-    print("Image: ", message.photo)
     photo_url = await message.photo[
         -1
     ].get_url()  # Await the coroutine to get the actual URL
-    print("IMAGE URL: ", photo_url)
     async with state.proxy() as data:
         data["image"] = photo_url  # Save the photo URL in the state
-    await message.answer("Provide load name")  # Prompt user for the load name
+    await message.answer(
+        "How do you title your load as, please give a name for it..."
+    )  # Prompt user for the load name
     await LoadCreationState.product_name.set()  # Move to the next state to collect load name
 
 
@@ -249,56 +238,62 @@ async def process_product_name(message: types.Message, state: FSMContext):
     The function saves the provided load name in the state and asks the user to provide
     more detailed information about the load.
     """
-    print("Load Name: ", message.text)
     async with state.proxy() as data:
         data["product_name"] = message.text  # Save the provided load name in the state
     await message.answer(
-        "Provide load info"
+        "Okay, please provide a brief description of the load."
     )  # Prompt user for more detailed load information
     await LoadCreationState.next()  # Move to the next state to collect more load information
 
 
 @dp.message_handler(state=LoadCreationState.product_info)
 async def process_product_info(message: types.Message, state: FSMContext):
-    print("Product info: ", message.text)
     async with state.proxy() as data:
         data["product_info"] = message.text
-    await message.answer("Please select the product type:")
+    await message.answer(
+        "What kind of load is your load? Please select following",
+        reply_markup=get_choices_button(),
+    )
     await LoadCreationState.next()
 
 
-@dp.message_handler(state=LoadCreationState.product_type)
-async def process_product_type(message: types.Message, state: FSMContext):
-    print("Load type: ", message.text)
+@dp.callback_query_handler(text_contains="choice")
+async def process_choice_handler(query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
-        data["product_type"] = message.text
-    await message.answer("Please provide the product count:")
+        data["product_type"] = query.data.split(":")[-1]
+    await bot.send_message(
+        text="Now please enter the amount of your load, just digits are enough to process...",
+        chat_id=query.message.chat.id,
+    )
     await LoadCreationState.next()
 
 
 @dp.message_handler(state=LoadCreationState.product_count)
 async def process_product_count(message: types.Message, state: FSMContext):
-    print("Load count: ", message.text)
     async with state.proxy() as data:
         if not message.text.isdigit():
-            await message.answer("Please provide a valid number")
+            await message.answer(
+                "🚫 As it is mentioned, please provide only number of your load(s)."
+            )
             await LoadCreationState.product_count.set()
             return
         data["product_count"] = int(message.text)
-    await message.answer("Please provide the address:")
+    await message.answer("Where is your load located? Can you provide its location?")
     await LoadCreationState.address.set()
 
 
 @dp.callback_query_handler(state=LoadCreationState.region, text_contains="region:")
 async def process_region_callback(query: types.CallbackQuery, state: FSMContext):
-    print("Load count: ", query.data)
     selected_region = query.data.split(":")[-1]
     state_data = await state.get_data()
     districts = get_districts(
         regions=state_data["regions"], selected_region=selected_region
     )
     btn = get_district_selection_buttons(districts, state_data["end"])
-    await query.message.edit_text(text="Please! Select districts:", reply_markup=btn)
+    await query.message.edit_text(
+        text="Now, please provide route for your load to be delivered, choose following regions and districts which helps driver to drive these direction much more easier...",
+        reply_markup=btn,
+    )
     await LoadCreationState.next()
 
 
@@ -310,7 +305,12 @@ async def process_district_callback(query: types.CallbackQuery, state: FSMContex
         token = get_user_by_telegram_id(query.from_user.id)
         regions = fetch_districts_details(token[2])
         btn = regions_btn(regions)
-        await query.message.edit_text("Please select region:", reply_markup=btn)
+        with state.proxy as data:
+            region = data["region"]
+            await query.message.edit_text(
+                f"Which districts of {region} should driver drive through?",
+                reply_markup=btn,
+            )
         await LoadCreationState.region.set()
     else:
         selected_district = query.data.split(":")[-1]
@@ -324,7 +324,9 @@ async def process_district_callback(query: types.CallbackQuery, state: FSMContex
 async def process_address_callback(query: types.CallbackQuery, state: FSMContext):
     to_location = get_selected_districts(query.message.reply_markup)
     await state.update_data(to_location=to_location)
-    await query.message.answer("Finally, please provide the receiver phone number:")
+    await query.message.answer(
+        "Almost there, please finalize process by entering a phone number of load reciever in this format: +998 (xx) xxx-xx-xx [e.g `+998991234567`]"
+    )
     await LoadCreationState.receiver_phone_number.set()
 
 
@@ -347,7 +349,9 @@ async def process_address(message: types.Message, state: FSMContext):
 async def process_receiver_phone_number(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["receiver_phone_number"] = message.text
-    await message.answer("Please provide the delivery date (e.g., YYYY-MM-DD):")
+    await message.answer(
+        "Please provide the delivery date in this format: (e.g., YYYY-MM-DD):"
+    )
     await LoadCreationState.date_delivery.set()
 
 
@@ -360,19 +364,20 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         if not re.match(r"^\d{4}-\d{2}-\d{2}$", message.text):
             await message.answer(
-                "Please enter the delivery date in the format YYYY-MM-DD."
+                "🚫 Oops! This is not valid date, please enter valid data in this format: YYYY-MM-DD."
             )
             await LoadCreationState.date_delivery.set()
             return
         data["date_delivery"] = message.text
         image_blob = url_to_blob(data["image"])
         data.pop("image")
-        print(image_blob)
-        print(data.as_dict())
         response = client_add_load(
             data=data.as_dict(), token=token, image_blob=image_blob
         )
-    await message.answer(f"Load details saved successfully!{response}")
+    await message.answer(
+        f"Cool, your load {data['name']} was successfully added!",
+        reply_markup=take_me_back_markup,
+    )
     await state.finish()
 
 
@@ -380,6 +385,15 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
 # ###########################################################################
 # ###########################################################################
 # Query Handlers
+
+
+@dp.callback_query_handler(text_contains="main_menu")
+async def main_menu_callback_handler(query: types.CallbackQuery):
+    await bot.send_message(
+        chat_id=query.message.chat.id,
+        text=f"Welcome back  {query.from_user.username}, please an action you want to perform!",
+        reply_markup=get_buttons_by_role(),
+    )
 
 
 @dp.callback_query_handler(lambda c: c.data == "notifications")
@@ -418,7 +432,9 @@ async def ask_for_which_load_handler(query: types.CallbackQuery, state: FSMConte
     await bot.send_message(
         chat_id=query.message.chat.id,
         text=f"Choose load to : {driver_id}",
-        reply_markup=get_loads_button(indices=[i["id"] for i in loads["results"]]),
+        reply_markup=get_loads_button(
+            indices=[(i["id"], i["product_name"]) for i in loads["results"]]
+        ),
     )
     await DeliveryRequestState.load_id.set()
 
@@ -446,7 +462,10 @@ async def show_my_loads(query: types.CallbackQuery):
         chat_id=query.message.chat.id,
         text=str(response),
         reply_markup=driver_my_loads_buttons(
-            [(i["id"], i["client"]["user"]["id"]) for i in response["results"]]
+            [
+                (i["product_name"], i["id"], i["client"]["user"]["id"])
+                for i in response["results"]
+            ]
         ),
     )
 
