@@ -61,11 +61,6 @@ async def start(message: types.Message, state: FSMContext):
         await RegistrationState.phonenumber.set()
 
 
-# @dp.callback_query_handler(lambda c: c.data == "show_notifications")
-# async def show_notifications(query: types.CallbackQuery):
-#     notifications = make_request(token=token)
-
-
 @dp.message_handler(state=RegistrationState.phonenumber)
 async def process_phonenumber(message: types.Message, state: FSMContext):
     if not is_valid(message.text):
@@ -184,17 +179,6 @@ async def process_product_count(message: types.Message, state: FSMContext):
         data["product_count"] = int(message.text)
     await message.answer("Please provide the address:")
     await LoadCreationState.address.set()
-
-
-# @dp.message_handler(state=LoadCreationState.region)
-# async def process_region(message: types.Message, state: FSMContext):
-#     token = get_user_by_telegram_id(message.from_user.id)
-#     regions = fetch_districts_details(token[2])
-#     async with state.proxy() as data:
-#         data['regions'] = regions
-#         data['end'] = False
-#     btn = regions_btn(regions)
-#     await message.answer("Please select region:", reply_markup=btn)
 
 
 @dp.callback_query_handler(state=LoadCreationState.region, text_contains="region:")
