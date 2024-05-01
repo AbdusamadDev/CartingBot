@@ -59,7 +59,7 @@ async def process_product_name(message: types.Message, state: FSMContext):
     await message.answer(
         "Okay, please provide a brief description of the load."
     )  # Prompt user for more detailed load information
-    await LoadCreationState.next()  # Move to the next state to collect more load information
+    await LoadCreationState.product_info.set()  # Move to the next state to collect more load information
 
 
 async def process_product_info(message: types.Message, state: FSMContext):
@@ -69,7 +69,7 @@ async def process_product_info(message: types.Message, state: FSMContext):
         "What kind of load is your load? Please select following",
         reply_markup=get_choices_button(),
     )
-    await LoadCreationState.next()
+    await LoadCreationState.product_type.set()
 
 
 async def process_choice_handler(query: types.CallbackQuery, state: FSMContext):
@@ -79,7 +79,7 @@ async def process_choice_handler(query: types.CallbackQuery, state: FSMContext):
         text="Now please enter the amount of your load, just digits are enough to process...",
         chat_id=query.message.chat.id,
     )
-    await LoadCreationState.next()
+    await LoadCreationState.product_count.set()
 
 
 async def process_product_count(message: types.Message, state: FSMContext):

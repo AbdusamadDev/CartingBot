@@ -6,12 +6,15 @@ from bot.roles.client import (
     client_show_my_load_handler,
     process_add_load_callback,
     process_district_callback,
+    process_address_callback,
     process_region_callback,
     process_choice_handler,
     process_image_handler,
     process_product_count,
+    process_delivery_date,
     process_product_name,
     process_product_info,
+    process_address,
 )
 from bot.roles.dispatcher import (
     dispatcher_show_all_loads_handler,
@@ -61,6 +64,11 @@ def register_client_handlers(dp: Dispatcher):
         ("region:", LoadCreationState.region, process_region_callback),
         ("choice", LoadCreationState.product_type, process_choice_handler),
         ("district", LoadCreationState.district, process_district_callback),
+        (
+            "next_to_receiver_phone_number",
+            LoadCreationState.district,
+            process_address_callback,
+        ),
     ]
     for data_contains, state, callback in callback_query_handlers:
         dp.register_callback_query_handler(
@@ -73,11 +81,13 @@ def register_client_handlers(dp: Dispatcher):
 
     # Register message handlers for load creation flow
     message_handlers = [
-        (LoadCreationState.image, ["photo"], process_image_handler),
+        (LoadCreationState.receiver_phone_number, None, process_receiver_phone_number),
+        (LoadCreationState.date_delivery, None, process_delivery_date),
+        (LoadCreationState.product_count, None, process_product_count),
         (LoadCreationState.product_name, None, process_product_name),
         (LoadCreationState.product_info, None, process_product_info),
-        (LoadCreationState.product_count, None, process_product_count),
-        (LoadCreationState.receiver_phone_number, None, process_receiver_phone_number),
+        (LoadCreationState.image, ["photo"], process_image_handler),
+        (LoadCreationState.address, None, process_address),
     ]
     for state, content_types, callback in message_handlers:
         dp.register_message_handler(
