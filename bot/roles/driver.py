@@ -1,16 +1,17 @@
+from aiogram import types
+import logging
+
 from bot.client import get_my_loads, request_delivery
 from bot.database import get_user_by_telegram_id
 from bot.buttons import driver_my_loads_buttons
-from aiogram import types
 from bot.conf import bot
 
 
 async def show_my_loads(query: types.CallbackQuery):
+    logging.info("Attempting to send personal loads...")
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
-    else:
-        pass
     response = get_my_loads(token=token)
     await bot.send_message(
         chat_id=query.message.chat.id,

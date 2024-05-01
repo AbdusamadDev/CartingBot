@@ -17,6 +17,7 @@ from bot.roles.client import (
     process_address,
 )
 from bot.roles.dispatcher import (
+    dispatcher_request_to_driver_handler,
     dispatcher_show_all_loads_handler,
     dispatcher_get_my_loads_handler,
     request_for_load_profile_view,
@@ -139,13 +140,17 @@ def register_dispatcher_handlers(dp: Dispatcher):
 
     # Grouping callback query handlers by common patterns for clarity
     dispatcher_handlers = [
+        ("driver_get_loads_profile_view:", None, request_for_load_profile_view),
+        ("dispatcher_show_all_loads", None, dispatcher_show_all_loads_handler),
         ("dispatcher_get_my_loads", None, dispatcher_get_my_loads_handler),
         ("dispatcher_show_drivers", None, show_all_drivers_handler),
-        ("dispatcher_show_all_loads", None, dispatcher_show_all_loads_handler),
-        ("dispatcher_driver_delivery_request_", DeliveryRequestState.load_id, None),
-        ("driver_get_load_", None, ask_for_which_load_handler),
-        ("driver_get_loads_profile_view:", None, request_for_load_profile_view),
         ("request_dispatcher_to_driver", None, request_for_load),
+        ("driver_get_load_", None, ask_for_which_load_handler),
+        (
+            "dispatcher_driver_delivery_request_",
+            DeliveryRequestState.load_id,
+            dispatcher_request_to_driver_handler,
+        ),
     ]
 
     # Registering handlers using a loop to reduce redundancy

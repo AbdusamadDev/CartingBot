@@ -80,7 +80,8 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
     response = register_user(context_data)
     if response["status_code"] == 400:
         await bot.send_message(
-            "Sorry, Unable to recognize you, please enter your phone number for quick registration in this format: +998 (xx) xxx-xx-xx [e.g `+998991234567`]"
+            query.message.chat.id,
+            "Sorry, Unable to recognize you, please enter your phone number for quick registration in this format: +998 (xx) xxx-xx-xx [e.g `+998991234567`]",
         )
         await RegistrationState.phonenumber.set()
     await TokenStorageState.token.set()
