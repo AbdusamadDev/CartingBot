@@ -18,6 +18,7 @@ from bot.roles.client import (
 )
 from bot.roles.dispatcher import (
     dispatcher_request_to_driver_handler,
+    dispatcher_to_client_confirm_handler,
     dispatcher_show_all_loads_handler,
     dispatcher_get_my_loads_handler,
     request_for_load_profile_view,
@@ -141,6 +142,7 @@ def register_dispatcher_handlers(dp: Dispatcher):
     # Grouping callback query handlers by common patterns for clarity
     dispatcher_handlers = [
         ("driver_get_loads_profile_view:", None, request_for_load_profile_view),
+        ("confirm_request", None, dispatcher_to_client_confirm_handler),
         ("dispatcher_show_all_loads", None, dispatcher_show_all_loads_handler),
         ("dispatcher_get_my_loads", None, dispatcher_get_my_loads_handler),
         ("dispatcher_show_drivers", None, show_all_drivers_handler),

@@ -51,6 +51,18 @@ def login_user(phonenumber, password):
     return {"message": response, "status_code": 200}
 
 
+def client_confirm_load_delivery(notification_id):
+    request = requests.post(
+        DOMAIN + "/notifications/confirm/",
+        json={
+            "notification_id": notification_id,
+            "status": "finish",
+        },
+    )
+    response = request.json()
+    return response
+
+
 def get_my_loads(token):
     request = requests.get(
         DOMAIN + "/drivers/loads/personal/",
@@ -156,18 +168,12 @@ def show_all_drivers(token):
 
 def client_add_load(token, data, image_blob):
     try:
-        # URL of your Django app endpoint for load creation
         django_url = DOMAIN + "/clients/load/"
-        # Prepare the files dictionary to send the image as a file
-        files = {"product_image": ("filename.jpg", image_blob, "image/jpeg")}
-        # Note: Adjust the MIME type ('image/jpeg') as necessary for your image format
-
-        # Ensure other data is sent as part of the data parameter
+        data["product_image"] = image_blob
         response = requests.post(
             django_url,
             headers={"Authorization": f"Bearer {token}"},
             data=data,
-            files=files,  # Add the files parameter here
         )
 
         return response.json()

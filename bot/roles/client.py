@@ -6,6 +6,7 @@ from bot.buttons import *
 from bot.client import *
 from bot.database import *
 from bot.utils import *
+import re
 
 
 async def process_add_load_callback(query: types.CallbackQuery, state: FSMContext):
@@ -172,11 +173,14 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
             await LoadCreationState.date_delivery.set()
             return
         data["date_delivery"] = message.text
-        image_blob = url_to_blob(data["image"])
+        image_blob = url_to_base64(data["image"])
         data.pop("image")
-        client_add_load(data=data.as_dict(), token=token, image_blob=image_blob)
+        response = client_add_load(
+            data=data.as_dict(), token=token, image_blob=image_blob
+        )
     await message.answer(
-        f"Cool, your load {data['product_name']} was successfully added!",
+        # f"Cool, your load {data['product_name']} was successfully added!",
+        str(response),
         reply_markup=take_me_back_markup,
     )
     await state.finish()

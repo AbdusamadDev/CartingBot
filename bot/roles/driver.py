@@ -37,3 +37,9 @@ async def proceed_driver_request_handler(query: types.CallbackQuery):
     await bot.send_message(
         chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
     )
+
+
+
+async def driver_to_client_request_handler(query: types.CallbackQuery):
+    
+    pass

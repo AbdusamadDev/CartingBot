@@ -113,3 +113,9 @@ async def request_for_load(query: types.CallbackQuery, state: FSMContext):
         text="Please choose one of the drivers and review the details of the driver.",
         reply_markup=get_driver_buttons(driver_data),
     )
+
+
+async def dispatcher_to_client_confirm_handler(query: types.CallbackQuery):
+    notification_id = query.data.split(":")[-1]
+    response = client_confirm_load_delivery(notification_id=notification_id)
+    await bot.send_message(query.message.chat.id, text=f"Salom bacha {response}")
