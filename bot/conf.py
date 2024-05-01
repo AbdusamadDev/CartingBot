@@ -1,5 +1,6 @@
-TOKEN="6998603334:AAEUXAIxN4aN9q3VfqYmAk90ZE0ER6m2i60"
-DOMAIN="https://new-api.carting.uz"
+TOKEN="6806518107:AAHKmoXl1OPVxPc2KaC4BamE3ZLVvnYQJL4"
+DOMAIN="http://localhost:8000"
+
 
 null = None
 

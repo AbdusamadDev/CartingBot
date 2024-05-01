@@ -15,6 +15,30 @@
     },
     "status_code": 200,
 }
+true = True
+null = None
+{
+    "model": "",
+    "type": "b1",
+    "number": "191",
+    "id": 1,
+    "driver": {
+        "first_name": "John",
+        "last_name": "Doe",
+        "work_status": true,
+        "work_date_period_from": null,
+        "work_date_period_to": null,
+        "user": {
+            "phonenumber": "+998995687745",
+            "user_type": "driver",
+            "first_name": null,
+            "last_name": null,
+            "id": 16,
+        },
+        "id": 2,
+        "routes": [],
+    },
+}
 
 [
     {

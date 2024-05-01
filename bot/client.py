@@ -87,11 +87,19 @@ def get_notifications(token):
     return response
 
 
-def request_delivery(token, load_id, user_id):
+def request_delivery(token, load_id, user_id, action):
+    print(
+        "_______________________________________________________________________________________________"
+    )
+    print("TO USER IS BEING: ", user_id)
     request = requests.post(
         DOMAIN + "/notifications/create/",
         headers={"Authorization": f"Bearer {token}"},
-        data={"load_id": int(load_id), "to_user": int(user_id), "action": "request_load"},
+        data={
+            "load_id": int(load_id),
+            "to_user": int(user_id),
+            "action": action,
+        },
     )
     response = request.json()
     return response
@@ -116,6 +124,25 @@ def get_all_loads_dispatcher(token):
     )
     response = request.json()
     return response
+
+
+def get_driver_details(token, driver_id):
+    request = requests.get(
+        DOMAIN + f"/dispatchers/driver/{driver_id}/",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    response = request.json()
+    status_code = request.status_code
+    return {"message": response, "status_code": status_code}
+
+
+def get_drivers_car_details(driver_id):
+    request = requests.get(
+        DOMAIN + f"/drivers/car/{driver_id}/",
+    )
+    response = request.json()
+    status_code = request.status_code
+    return {"message": response, "status_code": status_code}
 
 
 def show_all_drivers(token):

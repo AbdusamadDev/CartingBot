@@ -440,22 +440,49 @@ async def get_notifications_handler(query: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda c: c.data == "request_dispatcher_to_driver")
 async def request_for_load(query: types.CallbackQuery, state: FSMContext):
+    print("Fetching drivers list")
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
     response = show_all_drivers(token=token)
-    driver_data = [
-        (i["user"]["id"], f"{i['first_name']} {i['last_name']}") for i in response
-    ]
+    driver_data = [(i["id"], f"{i['first_name']} {i['last_name']}") for i in response]
     await bot.send_message(
         chat_id=query.message.chat.id,
-        text=get_parsed_drivers_list(driver_list=response),
+        text="Please choose one of the drivers and review the details of the driver.",
         reply_markup=get_driver_buttons(driver_data),
     )
 
 
+@dp.callback_query_handler(text_contains="driver_get_loads_profile_view:")
+async def request_for_load_profile_view(query: types.CallbackQuery, state: FSMContext):
+    print("[INFO] Profile view handler here...")
+    driver_id = int(query.data.split(":")[-1])
+    async with state.proxy() as data:
+        data["driver_id"] = driver_id
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    print(driver_id, type(driver_id))
+    driver_details = get_driver_details(token=token, driver_id=driver_id)
+    car_details = get_drivers_car_details(driver_id=driver_id)
+    print(driver_details)
+    print(car_details)
+    if driver_details["status_code"] == 200:
+        driver_details = driver_details["message"]
+        message = f"👤 Fullname: {driver_details['first_name']} {driver_details['last_name']}\n📞 Phone number: {driver_details['user']['phonenumber']}"
+        if car_details["status_code"] != 404:
+            car_details = car_details["message"]
+            message += f"\n🚗 Car model: {car_details['model']}\n🚗 Car number: {car_details['number']}"
+        await bot.send_message(
+            query.message.chat.id,
+            text=message,
+            reply_markup=get_one_driver_button(driver_id=driver_id),
+        )
+
+
 @dp.callback_query_handler(lambda c: c.data.startswith("driver_get_load_"))
 async def ask_for_which_load_handler(query: types.CallbackQuery, state: FSMContext):
+    print("[INFO] Choosing load from loads list")
     driver_id = query.data.split("_")[-1]
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
@@ -510,24 +537,27 @@ async def show_my_loads(query: types.CallbackQuery):
 async def dispatcher_request_to_driver_handler(
     query: types.CallbackQuery, state: FSMContext
 ):
-    data = await state.get_data()
+    print("[INFO] Requesting to driver")
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
     context = await state.get_data()
     load_id = query.data.split("_")[-1]
     driver_id = context["driver_id"]
-    response = request_delivery(token=token, load_id=load_id, user_id=driver_id)
+    response = request_delivery(
+        token=token, load_id=load_id, user_id=driver_id, action="request_transaction"
+    )
     await query.answer(str(response))
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith("driver_show_load_"))
 async def proceed_driver_request_handler(query: types.CallbackQuery):
+    print("[INFO] Requesting driver load...")
     load_id, client_id = query.data.split("_")[-2], query.data.split("_")[-1]
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
-    response = request_delivery(token=token, load_id=load_id, user_id=client_id)
+    response = request_delivery(token=token, load_id=load_id, user_id=client_id, action="request_load")
     await bot.send_message(
         chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
     )

@@ -88,9 +88,20 @@ def get_driver_buttons(indices):
         keyboard.add(
             InlineKeyboardButton(
                 text=f"👤 {fullname}",
-                callback_data=f"driver_get_load_{driver_id}",
+                callback_data=f"driver_get_loads_profile_view:{driver_id}",
             )
         )
+    return keyboard
+
+
+def get_one_driver_button(driver_id):
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        InlineKeyboardButton(
+            text=f"Request to this driver",
+            callback_data=f"driver_get_load_{driver_id}",
+        )
+    )
     return keyboard
 
 
