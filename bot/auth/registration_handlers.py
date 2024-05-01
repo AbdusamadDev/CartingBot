@@ -6,6 +6,7 @@ from bot.states import *
 from bot.client import *
 from bot.utils import *
 from bot.conf import bot
+import logging
 
 
 async def process_phonenumber(message: types.Message, state: FSMContext):
@@ -64,6 +65,7 @@ async def handle_contact(message: types.Message, state: FSMContext):
 
 
 async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
+    logging.info("Processing role callback <===>")
     role = query.data
     await state.update_data(role=role)
     data = await state.get_data()
@@ -83,7 +85,6 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
         await RegistrationState.phonenumber.set()
     await TokenStorageState.token.set()
     await state.set_state(TokenStorageState.token)
-    print(response)
     token = response["message"]["access"]
     await state.update_data(token=token)
     insert_user(telegram_id=query.from_user.id, token=token)

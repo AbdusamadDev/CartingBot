@@ -38,7 +38,7 @@ from bot.roles.driver import show_my_loads
 from bot.commands import start_handler
 
 
-async def register_client_handlers(dp: Dispatcher):
+def register_client_handlers(dp: Dispatcher):
     """
     Registers all necessary handlers for client interactions within the bot.
 
@@ -83,7 +83,7 @@ async def register_client_handlers(dp: Dispatcher):
         )
 
 
-async def register_driver_handlers(dp: Dispatcher):
+def register_driver_handlers(dp: Dispatcher):
     """
     A coroutine for registering all driver-related query and message handlers.
 
@@ -106,7 +106,7 @@ async def register_driver_handlers(dp: Dispatcher):
     )
 
 
-async def register_dispatcher_handlers(dp: Dispatcher):
+def register_dispatcher_handlers(dp: Dispatcher):
     """
     Registers dispatcher-specific callback query handlers for the bot.
 
@@ -141,7 +141,7 @@ async def register_dispatcher_handlers(dp: Dispatcher):
         )
 
 
-async def register_global_handlers(dp: Dispatcher):
+def register_global_handlers(dp: Dispatcher):
     """
     Registers global callback query handlers for the bot.
 
@@ -165,7 +165,7 @@ async def register_global_handlers(dp: Dispatcher):
         dp.register_callback_query_handler(callback=callback, text_contains=text)
 
 
-async def register_registration_handlers(dp: Dispatcher):
+def register_registration_handlers(dp: Dispatcher):
     dp.register_message_handler(
         state=RegistrationState.phonenumber, callback=process_phonenumber
     )
@@ -180,14 +180,14 @@ async def register_registration_handlers(dp: Dispatcher):
         state=RegistrationState.phonenumber,
         callback=share_number_for_registration,
     )
-    # dp.register_callback_query_handler(
-    #     lambda c: c.data in ["driver", "dispatcher", "client"],
-    #     state=RegistrationState.role,
-    #     callback=process_role_callback,
-    # )
+    dp.register_callback_query_handler(
+        text=["driver", "client", "dispatcher"],
+        state=RegistrationState.role,
+        callback=process_role_callback,
+    )
 
 
-async def register_login_handlers(dp: Dispatcher):
+def register_login_handlers(dp: Dispatcher):
     dp.register_message_handler(
         state=LoginState.phonenumber,
         content_types=types.ContentType.CONTACT,
@@ -199,5 +199,5 @@ async def register_login_handlers(dp: Dispatcher):
     dp.register_message_handler(state=LoginState.password)
 
 
-async def register_commands_handlers(dp: Dispatcher):
+def register_commands_handlers(dp: Dispatcher):
     dp.register_message_handler(commands=["start"], state="*", callback=start_handler)
