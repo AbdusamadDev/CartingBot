@@ -33,7 +33,11 @@ from bot.auth.registration_handlers import (
     process_password,
     process_sms_code,
 )
-from bot.auth.login_handlers import share_number_for_login
+from bot.auth.login_handlers import (
+    share_number_for_login,
+    process_login_handler,
+    process_password_login,
+)
 from bot.roles.driver import show_my_loads
 from bot.commands import start_handler
 
@@ -166,20 +170,39 @@ def register_global_handlers(dp: Dispatcher):
 
 
 def register_registration_handlers(dp: Dispatcher):
+    """
+    Registers handlers for the registration process of users.
+
+    This function sets up message handlers for different stages of the registration process, including
+    phone number submission, SMS code verification, and password setting. It also registers a handler
+    for receiving a contact as a phone number and a callback query handler for selecting the user's role
+    (driver, client, dispatcher).
+
+    Parameters:
+    - dp (Dispatcher): The Aiogram Dispatcher instance to which the handlers are registered.
+
+    There are no return values for this function as it operates by side-effect, registering handlers
+    with the dispatcher to handle future events related to user registration.
+    """
+    # Register a message handler for phone number submission in the registration process
     dp.register_message_handler(
         state=RegistrationState.phonenumber, callback=process_phonenumber
     )
+    # Register a message handler for SMS code verification during registration
     dp.register_message_handler(
         state=RegistrationState.sms_code, callback=process_sms_code
     )
+    # Register a message handler for setting a password in the registration process
     dp.register_message_handler(
         state=RegistrationState.password, callback=process_password
     )
+    # Register a message handler for receiving a contact as a phone number during registration
     dp.register_message_handler(
         content_types=types.ContentType.CONTACT,
         state=RegistrationState.phonenumber,
         callback=share_number_for_registration,
     )
+    # Register a callback query handler for selecting the user's role during registration
     dp.register_callback_query_handler(
         text=["driver", "client", "dispatcher"],
         state=RegistrationState.role,
@@ -191,12 +214,14 @@ def register_login_handlers(dp: Dispatcher):
     dp.register_message_handler(
         state=LoginState.phonenumber,
         content_types=types.ContentType.CONTACT,
-        callback=process_phonenumber,
+        callback=share_number_for_login,
     )
     dp.register_message_handler(
-        state=LoginState.phonenumber,
+        state=LoginState.phonenumber, callback=process_login_handler
     )
-    dp.register_message_handler(state=LoginState.password)
+    dp.register_message_handler(
+        state=LoginState.password, callback=process_password_login
+    )
 
 
 def register_commands_handlers(dp: Dispatcher):

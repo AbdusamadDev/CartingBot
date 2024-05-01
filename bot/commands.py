@@ -1,14 +1,17 @@
 from aiogram.dispatcher import FSMContext
 from aiogram import types
+import logging
 
 from bot.states import LoginState, RegistrationState
 from bot.database import get_user_by_telegram_id
 from bot.buttons import get_buttons_by_role
 from bot.client import get_profile_details
 
+
 async def start_handler(message: types.Message, state: FSMContext):
     user = get_user_by_telegram_id(message.from_user.id)
     if user:
+        logging.info(f"The user details from database: {user}")
         profile = get_profile_details(user[2])
         # User exists in database
         if profile["status_code"] == 401:
@@ -16,6 +19,7 @@ async def start_handler(message: types.Message, state: FSMContext):
             await message.answer(
                 "🚫 Sorry, unable to recognize you, please enter you phone number to login."
             )
+            logging.info("SETTING phonenumber state")
             await LoginState.phonenumber.set()
         else:
             # User has valid token and authenticated

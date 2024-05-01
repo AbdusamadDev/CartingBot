@@ -24,5 +24,5 @@ if __name__ == "__main__":
     # asyncio.run(register_client_handlers(dp))
     # asyncio.run(register_global_handlers(dp))
     # asyncio.run(register_driver_handlers(dp))
-    # asyncio.run(register_login_handlers(dp))
+    register_login_handlers(dp)
     executor.start_polling(dp, skip_updates=True)
