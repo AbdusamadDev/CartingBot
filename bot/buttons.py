@@ -6,7 +6,7 @@ from aiogram.types import (
 )
 import requests
 
-from conf import DOMAIN
+from bot.conf import DOMAIN
 
 
 notifications_button = InlineKeyboardButton(

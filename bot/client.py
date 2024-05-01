@@ -1,5 +1,5 @@
 import requests
-from conf import DOMAIN
+from bot.conf import DOMAIN
 
 
 def verify_phonenumber(phonenumber, code):
