@@ -58,7 +58,7 @@ def url_to_base64(image_url):
     try:
         response = requests.get(image_url)
         encoded_string = base64.b64encode(response.content)
-        return encoded_string.decode("utf-8")  # Return base64 encoded string
+        return encoded_string.decode("utf-8")
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         return None
