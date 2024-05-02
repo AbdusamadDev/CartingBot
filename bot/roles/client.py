@@ -6,6 +6,7 @@ from bot.buttons import *
 from bot.client import *
 from bot.database import *
 from bot.utils import *
+import re
 
 
 async def process_add_load_callback(query: types.CallbackQuery, state: FSMContext):
@@ -172,11 +173,14 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
             await LoadCreationState.date_delivery.set()
             return
         data["date_delivery"] = message.text
-        image_blob = url_to_blob(data["image"])
+        image_blob = url_to_base64(data["image"])
         data.pop("image")
-        client_add_load(data=data.as_dict(), token=token, image_blob=image_blob)
+        response = client_add_load(
+            data=data.as_dict(), token=token, image_blob=image_blob
+        )
     await message.answer(
-        f"Cool, your load {data['product_name']} was successfully added!",
+        # f"Cool, your load {data['product_name']} was successfully added!",
+        str(response),
         reply_markup=take_me_back_markup,
     )
     await state.finish()
@@ -190,3 +194,20 @@ async def client_show_my_load_handler(query: types.CallbackQuery):
     await bot.send_message(
         chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
     )
+
+
+async def client_FINISH_processes(query: types.CallbackQuery):
+    transaction_uuid = query.data.split("splitting_part")[-1]
+    token = get_user_by_telegram_id(query.from_user.id)
+    print(9999999999999999999999999999999999999999999, transaction_uuid)
+    if token:
+        token = token[2]
+    response = client_FINISH_all_processes_request(
+        transaction_id=transaction_uuid,
+        token=token,
+        action="finish_client",
+        status="yes",
+    )
+    await bot.send_message(query.from_user.id, text=str(response))
+
+

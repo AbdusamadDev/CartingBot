@@ -1,7 +1,6 @@
 from datetime import datetime
 import sqlite3
 
-from bot.conf import BASE_DIR
 
 
 # class BaseDataabase(sqlite3.Connection):
@@ -10,7 +9,7 @@ from bot.conf import BASE_DIR
 
 # Function to create a SQLite database and the "users" table
 def create_table():
-    conn = sqlite3.connect(BASE_DIR + "database.sqlite3")
+    conn = sqlite3.connect("database.sqlite3")
     c = conn.cursor()
     c.execute(
         """CREATE TABLE IF NOT EXISTS users 
@@ -21,7 +20,7 @@ def create_table():
 
 
 def clear_database():
-    conn = sqlite3.connect(BASE_DIR + "database.sqlite3")
+    conn = sqlite3.connect("database.sqlite3")
     c = conn.cursor()
     c.execute("DELETE FROM users")
     conn.commit()
@@ -30,7 +29,7 @@ def clear_database():
 
 # Function to insert a new user into the "users" table
 def insert_user(telegram_id, token):
-    conn = sqlite3.connect(BASE_DIR + "database.sqlite3")
+    conn = sqlite3.connect("database.sqlite3")
     c = conn.cursor()
     date_created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.execute(
@@ -44,7 +43,7 @@ def insert_user(telegram_id, token):
 
 # Function to retrieve all users from the "users" table
 def get_all_users():
-    conn = sqlite3.connect(BASE_DIR + "database.sqlite3")
+    conn = sqlite3.connect("database.sqlite3")
     c = conn.cursor()
     c.execute("""SELECT * FROM users""")
     rows = c.fetchall()
@@ -54,7 +53,7 @@ def get_all_users():
 
 # Function to retrieve a specific user by their Telegram ID
 def get_user_by_telegram_id(telegram_id):
-    conn = sqlite3.connect(BASE_DIR + "database.sqlite3")
+    conn = sqlite3.connect("database.sqlite3")
     c = conn.cursor()
     c.execute("""SELECT * FROM users WHERE telegram_id = ?""", (telegram_id,))
     row = c.fetchone()
@@ -64,7 +63,7 @@ def get_user_by_telegram_id(telegram_id):
 
 # Function to update the token of a user
 def update_token(telegram_id, new_token):
-    conn = sqlite3.connect(BASE_DIR + "database.sqlite3")
+    conn = sqlite3.connect("database.sqlite3")
     c = conn.cursor()
     c.execute(
         """UPDATE users SET token = ? WHERE telegram_id = ?""", (new_token, telegram_id)
@@ -75,7 +74,7 @@ def update_token(telegram_id, new_token):
 
 # Function to delete a user by their Telegram ID
 def delete_user(telegram_id):
-    conn = sqlite3.connect(BASE_DIR + "database.sqlite3")
+    conn = sqlite3.connect("database.sqlite3")
     c = conn.cursor()
     c.execute("""DELETE FROM users WHERE telegram_id = ?""", (telegram_id,))
     conn.commit()

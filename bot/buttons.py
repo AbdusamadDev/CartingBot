@@ -13,6 +13,9 @@ notifications_button = InlineKeyboardButton(
     text="🔔 Show my notifications",
     callback_data="notifications",
 )
+driver_all_loads_btn = InlineKeyboardButton(
+    text="Show all loads", callback_data="show_all_driver_loads"
+)
 
 client_buttons = InlineKeyboardMarkup(row_width=2)
 client_btn = [
@@ -29,6 +32,7 @@ driver_btn = [
     notifications_button,
     InlineKeyboardButton(text="📦 My loads", callback_data="show_load"),
     InlineKeyboardButton(text="👤 My profile", callback_data="profile_view"),
+    driver_all_loads_btn,
 ]
 driver_buttons.add(*driver_btn)
 
@@ -61,6 +65,45 @@ def get_loads_button(indices):
             )
         )
     return keyboard
+
+
+def get_loads_for_driver(indices):
+    markup = InlineKeyboardMarkup(row_width=1)
+    for load_id, name in indices:
+        markup.add(
+            InlineKeyboardButton(
+                text=f"📦 {name}",
+                callback_data=f"driver_request_to_client:{load_id}",
+            )
+        )
+    return markup
+
+
+def client_confirmation_btn(transaction_uuid):
+    markup = InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        InlineKeyboardButton(
+            text="Confirm",
+            callback_data=f"confirm_load_splitting_part{transaction_uuid}",
+        ),
+    )
+    markup.add(
+        InlineKeyboardButton(
+            text="Didnt get the load!", callback_data="deny_confirmation"
+        )
+    )
+    return markup
+
+
+def successfully_delivered_btn(transaction_id):
+    markup = InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        InlineKeyboardButton(
+            text="Successfully delivered the load",
+            callback_data=f"driver_successfully_delivered:{transaction_id}",
+        )
+    )
+    return markup
 
 
 contact_btn = ReplyKeyboardMarkup(

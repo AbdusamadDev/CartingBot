@@ -7,6 +7,7 @@ from bot.roles.client import (
     process_add_load_callback,
     process_district_callback,
     process_address_callback,
+    client_FINISH_processes,
     process_region_callback,
     process_choice_handler,
     process_image_handler,
@@ -29,6 +30,8 @@ from bot.globals import (
     main_menu_callback_handler,
     get_notifications_handler,
     profile_view_callback,
+    confirm_handler,
+    reject_handler,
 )
 from bot.auth.registration_handlers import (
     share_number_for_registration,
@@ -42,7 +45,12 @@ from bot.auth.login_handlers import (
     process_login_handler,
     process_password_login,
 )
-from bot.roles.driver import show_my_loads
+from bot.roles.driver import (
+    finished_delivery_request_to_client,
+    driver_to_client_request_handler,
+    show_all_loads_for_driver,
+    show_my_loads,
+)
 from bot.commands import start_handler
 
 
@@ -65,6 +73,7 @@ def register_client_handlers(dp: Dispatcher):
         ("region:", LoadCreationState.region, process_region_callback),
         ("choice", LoadCreationState.product_type, process_choice_handler),
         ("district", LoadCreationState.district, process_district_callback),
+        ("confirm_load_splitting_part", None, client_FINISH_processes),
         (
             "next_to_receiver_phone_number",
             LoadCreationState.district,
@@ -80,6 +89,9 @@ def register_client_handlers(dp: Dispatcher):
             state=state,
         )
 
+    dp.register_callback_query_handler(
+        text_contains="deny_confirmation", callback=reject_handler
+    )
     # Register message handlers for load creation flow
     message_handlers = [
         (LoadCreationState.receiver_phone_number, None, process_receiver_phone_number),
@@ -118,6 +130,24 @@ def register_driver_handlers(dp: Dispatcher):
     )
     dp.register_callback_query_handler(
         text_contains="driver_show_load_", callback=show_my_loads
+    )
+    dp.register_callback_query_handler(
+        text_contains="show_all_driver_loads",
+        callback=dispatcher_show_all_loads_handler,
+    )
+    dp.register_callback_query_handler(
+        text="show_all_driver_loads", callback=show_all_loads_for_driver
+    )
+    dp.register_callback_query_handler(
+        text_contains="driver_request_to_client",
+        callback=driver_to_client_request_handler,
+    )
+    dp.register_callback_query_handler(
+        text_contains="driver_successfully_delivered",
+        callback=finished_delivery_request_to_client,
+    )
+    dp.register_callback_query_handler(
+        text_contains="decline_request", callback=reject_handler
     )
 
 
@@ -182,6 +212,10 @@ def register_global_handlers(dp: Dispatcher):
 
     for text, callback in global_handlers:
         dp.register_callback_query_handler(callback=callback, text_contains=text)
+    dp.register_callback_query_handler(
+        text_contains=["confirm_request"],
+        callback=confirm_handler,
+    )
 
 
 def register_registration_handlers(dp: Dispatcher):
