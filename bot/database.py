@@ -1,7 +1,6 @@
 from datetime import datetime
 import sqlite3
 
-from bot.conf import BASE_DIR
 
 
 # class BaseDataabase(sqlite3.Connection):
