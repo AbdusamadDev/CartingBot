@@ -18,7 +18,6 @@ from bot.roles.client import (
 )
 from bot.roles.dispatcher import (
     dispatcher_request_to_driver_handler,
-    dispatcher_to_client_confirm_handler,
     dispatcher_show_all_loads_handler,
     dispatcher_get_my_loads_handler,
     request_for_load_profile_view,
@@ -30,6 +29,7 @@ from bot.globals import (
     main_menu_callback_handler,
     get_notifications_handler,
     profile_view_callback,
+    confirm_handler,
 )
 from bot.auth.registration_handlers import (
     share_number_for_registration,
@@ -43,7 +43,11 @@ from bot.auth.login_handlers import (
     process_login_handler,
     process_password_login,
 )
-from bot.roles.driver import show_my_loads
+from bot.roles.driver import (
+    show_my_loads,
+    show_all_loads_for_driver,
+    driver_to_client_request_handler,
+)
 from bot.commands import start_handler
 
 
@@ -120,6 +124,17 @@ def register_driver_handlers(dp: Dispatcher):
     dp.register_callback_query_handler(
         text_contains="driver_show_load_", callback=show_my_loads
     )
+    dp.register_callback_query_handler(
+        text_contains="show_all_driver_loads",
+        callback=dispatcher_show_all_loads_handler,
+    )
+    dp.register_callback_query_handler(
+        text="show_all_driver_loads", callback=show_all_loads_for_driver
+    )
+    dp.register_callback_query_handler(
+        text_contains="driver_request_to_client",
+        callback=driver_to_client_request_handler,
+    )
 
 
 def register_dispatcher_handlers(dp: Dispatcher):
@@ -142,7 +157,6 @@ def register_dispatcher_handlers(dp: Dispatcher):
     # Grouping callback query handlers by common patterns for clarity
     dispatcher_handlers = [
         ("driver_get_loads_profile_view:", None, request_for_load_profile_view),
-        ("confirm_request", None, dispatcher_to_client_confirm_handler),
         ("dispatcher_show_all_loads", None, dispatcher_show_all_loads_handler),
         ("dispatcher_get_my_loads", None, dispatcher_get_my_loads_handler),
         ("dispatcher_show_drivers", None, show_all_drivers_handler),
@@ -184,6 +198,10 @@ def register_global_handlers(dp: Dispatcher):
 
     for text, callback in global_handlers:
         dp.register_callback_query_handler(callback=callback, text_contains=text)
+    dp.register_callback_query_handler(
+        text_contains=["confirm_request"],
+        callback=confirm_handler,
+    )
 
 
 def register_registration_handlers(dp: Dispatcher):

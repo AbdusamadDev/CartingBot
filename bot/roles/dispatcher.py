@@ -36,9 +36,16 @@ async def dispatcher_show_all_loads_handler(query: types.CallbackQuery):
     if token:
         token = token[2]
     response = get_all_loads_dispatcher(token)
-    await bot.send_message(
-        chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
-    )
+    if response["status_code"] == 200:
+        response = response["message"]
+        print(response)
+        await bot.send_message(
+            chat_id=query.message.chat.id,
+            text=f"Requested fakely: {response}",
+            reply_markup=get_loads_for_driver(
+                [(i["id"], i["product_name"]) for i in response["results"]]
+            ),
+        )
 
 
 async def dispatcher_request_to_driver_handler(
@@ -65,14 +72,16 @@ async def ask_for_which_load_handler(query: types.CallbackQuery, state: FSMConte
         token = token[2]
     await state.update_data(driver_id=driver_id)
     loads = get_all_loads_dispatcher(token=token)
-    await bot.send_message(
-        chat_id=query.message.chat.id,
-        text=f"Choose load to : {driver_id}",
-        reply_markup=get_loads_button(
-            indices=[(i["id"], i["product_name"]) for i in loads["results"]]
-        ),
-    )
-    await DeliveryRequestState.load_id.set()
+    if loads["status_code"] == 200:
+        loads = loads["message"]
+        await bot.send_message(
+            chat_id=query.message.chat.id,
+            text=f"Choose load to : {driver_id}",
+            reply_markup=get_loads_button(
+                indices=[(i["id"], i["product_name"]) for i in loads["results"]]
+            ),
+        )
+        await DeliveryRequestState.load_id.set()
 
 
 async def request_for_load_profile_view(query: types.CallbackQuery, state: FSMContext):
@@ -115,7 +124,3 @@ async def request_for_load(query: types.CallbackQuery, state: FSMContext):
     )
 
 
-async def dispatcher_to_client_confirm_handler(query: types.CallbackQuery):
-    notification_id = query.data.split(":")[-1]
-    response = client_confirm_load_delivery(notification_id=notification_id)
-    await bot.send_message(query.message.chat.id, text=f"Salom bacha {response}")

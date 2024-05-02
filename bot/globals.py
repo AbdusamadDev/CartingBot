@@ -45,3 +45,23 @@ async def main_menu_callback_handler(query: types.CallbackQuery):
         text=f"Welcome back  {query.from_user.username}, please select an action you want to perform!",
         reply_markup=get_buttons_by_role(a),
     )
+
+
+async def confirm_handler(query: types.CallbackQuery):
+    print(query.data)
+    # confirm_request:client:1
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    user_type = query.data.split(":")[1]
+    print("QQQQQQQQQQQQQQQQQQQQQ")
+    if user_type == "client":
+        notification_id = query.data.split(":")[-1]
+        print(notification_id)
+        print("NNNNNNNNNNNNNNNNNN")
+        response = client_confirm_load_delivery(
+            notification_id=notification_id, token=token
+        )
+        await bot.send_message(query.message.chat.id, text=f"Salom bacha {response}")
+    elif user_type == "driver":
+        pass

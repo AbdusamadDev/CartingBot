@@ -51,12 +51,14 @@ def login_user(phonenumber, password):
     return {"message": response, "status_code": 200}
 
 
-def client_confirm_load_delivery(notification_id):
+def client_confirm_load_delivery(notification_id, token):
     request = requests.post(
         DOMAIN + "/notifications/confirm/",
+        headers={"Authorization": f"Bearer {token}"},
         json={
             "notification_id": notification_id,
-            "status": "finish",
+            "status": "yes",
+            "action": "confirmation",
         },
     )
     response = request.json()
@@ -135,7 +137,7 @@ def get_all_loads_dispatcher(token):
         headers={"Authorization": f"Bearer {token}"},
     )
     response = request.json()
-    return response
+    return {"message": response, "status_code": request.status_code}
 
 
 def get_driver_details(token, driver_id):
@@ -164,6 +166,14 @@ def show_all_drivers(token):
     )
     response = request.json()
     return response
+
+
+def get_one_load_details(token, load_id):
+    request = requests.get(
+        DOMAIN + f"/clients/load/{load_id}/?status=all",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    return {"message": request.json(), "status_code": request.status_code}
 
 
 def client_add_load(token, data, image_blob):
