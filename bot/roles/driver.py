@@ -1,5 +1,6 @@
 from aiogram import types
 import logging
+import asyncio
 
 from bot.client import *
 from bot.database import get_user_by_telegram_id
@@ -16,12 +17,12 @@ async def show_my_loads(query: types.CallbackQuery):
     await bot.send_message(
         chat_id=query.message.chat.id,
         text=str(response),
-        reply_markup=driver_my_loads_buttons(
-            [
-                (i["product_name"], i["id"], i["client"]["user"]["id"])
-                for i in response["results"]
-            ]
-        ),
+        # reply_markup=driver_my_loads_buttons(
+        #     [
+        #         (i["product_name"], i["id"], i["client"]["user"]["id"])
+        #         for i in response["results"]
+        #     ]
+        # ),
     )
 
 
@@ -40,68 +41,42 @@ async def show_all_loads_for_driver(query: types.CallbackQuery):
         )
 
 
-# async def proceed_driver_request_handler(query: types.CallbackQuery):
-#     print("[INFO] Requesting driver load...")
-#     load_id, client_id = query.data.split("_")[-2], query.data.split("_")[-1]
-#     token = get_user_by_telegram_id(query.from_user.id)
-#     if token:
-#         token = token[2]
-#     response = request_delivery(
-#         token=token, load_id=load_id, user_id=client_id, action=""
-#     )
-#     await bot.send_message(
-#         chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
-#     )
-
-
 async def driver_to_client_request_handler(query: types.CallbackQuery):
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
     load_id = int(query.data.split(":")[-1])
-    print(load_id)
+    print("Load ID: ", load_id)
     load_object = get_one_load_details(token=token, load_id=load_id)
     if load_object["status_code"] != 200:
         await bot.send_message(query.message.chat.id, text=str(load_object))
         return
     load_object = load_object["message"]
-    client_id = load_object["client"]["user"]["id"]
-    response = request_delivery(
-        action="request_load", load_id=load_id, user_id=client_id, token=token
-    )
-    await bot.send_message(query.message.chat.id, text=str(response))
+    response = request_delivery(action="request_load", load_id=load_id, token=token)
+    await bot.send_message(query.from_user.id, text=str(response))
+    # transaction = get_transaction(load_id)
+    # if transaction["status_code"] == 200:
+    #     transaction = transaction["message"]
+    #     print(transaction)
+    #     transaction_id = transaction["uuid"]
+    #     telegram_id = transaction["driver"]["user"]["telegram_id"]
+    #     await bot.send_message(
+    #         telegram_id,
+    #         text=str(response),
+    #         reply_markup=successfully_delivered_btn(transaction_id),
+    #     )
+    # else:
+    #     print("Failed")
+    #     await bot.send_message(
+    #         query.from_user.id, text=f"Failed to take that load, sorry {transaction}"
+    #     )
 
 
-"""
-
-{
-    "receiver_phone_number": "+998940055555",
-    "product_count": 55.0,
-    "date_delivery": "2020-01-01T00:23:00+05:00",
-    "product_name": "shkalat",
-    "product_info": "ladshflkjahsdlkfjhasdfjkhasdlkf",
-    "product_type": "kb",
-    "from_location": [
-        "e"
-    ],
-    "to_location": [
-        "t"
-    ],
-    "address": "kjlhsdljfghsdfgsdfg",
-    "status": "active",
-    "product_image": "http://localhost:8000/media/load_images/5a661fb9-76d3-4bbd-8ec4-9f0163cd714f.jpg",
-    "id": 1,
-    "client": {
-        "first_name": null,
-        "last_name": null,
-        "obj_status": "available",
-        "user": {
-            "phonenumber": "+998940056655",
-            "user_type": "client",
-            "first_name": null,
-            "last_name": null,
-            "id": 2
-        }
-    }
-}
-"""
+# Callback Data: driver_successfully_delivered:<>
+async def finished_delivery_request_to_client(query: types.CallbackQuery):
+    transaction_id = query.data.split(":")[-1]
+    token = get_user_by_telegram_id(query.from_user.id)
+    if token:
+        token = token[2]
+    request = finished_delivery_request(token, transaction_id=transaction_id)
+    await bot.send_message(chat_id=query.from_user.id, text=str(request))

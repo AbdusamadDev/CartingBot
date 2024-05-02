@@ -44,9 +44,10 @@ from bot.auth.login_handlers import (
     process_password_login,
 )
 from bot.roles.driver import (
-    show_my_loads,
-    show_all_loads_for_driver,
+    finished_delivery_request_to_client,
     driver_to_client_request_handler,
+    show_all_loads_for_driver,
+    show_my_loads,
 )
 from bot.commands import start_handler
 
@@ -134,6 +135,10 @@ def register_driver_handlers(dp: Dispatcher):
     dp.register_callback_query_handler(
         text_contains="driver_request_to_client",
         callback=driver_to_client_request_handler,
+    )
+    dp.register_callback_query_handler(
+        text_contains="driver_successfully_delivered",
+        callback=finished_delivery_request_to_client,
     )
 
 

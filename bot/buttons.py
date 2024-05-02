@@ -81,6 +81,17 @@ def get_loads_for_driver(indices):
     return markup
 
 
+def successfully_delivered_btn(transaction_id):
+    markup = InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        InlineKeyboardButton(
+            text="Successfully delivered the load",
+            callback_data=f"driver_successfully_delivered:{transaction_id}",
+        )
+    )
+    return markup
+
+
 contact_btn = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="Share my phone number", request_contact=True)]],
     resize_keyboard=True,

@@ -11,8 +11,8 @@ def verify_phonenumber(phonenumber, code):
     return response
 
 
-def register_user(data):
-    request = requests.post(DOMAIN + "/accounts/register/", json=data)
+def register_user(data, telegram_id):
+    request = requests.post(DOMAIN + f"/accounts/register/?telegram_id={telegram_id}", json=data)
     response = request.json()
     status_code = request.status_code
     if "detail" in response.keys() and status_code == 400:
@@ -65,6 +65,12 @@ def client_confirm_load_delivery(notification_id, token):
     return response
 
 
+def get_transaction(load_id):
+    request = requests.get(DOMAIN + f"/dispatchers/transactions/{load_id}")
+    response = request.json()
+    return {"message": response, "status_code": request.status_code}
+
+
 def get_my_loads(token):
     request = requests.get(
         DOMAIN + "/drivers/loads/personal/",
@@ -101,19 +107,24 @@ def get_notifications(token):
     return response
 
 
-def request_delivery(token, load_id, user_id, action):
-    print(
-        "_______________________________________________________________________________________________"
+def finished_delivery_request(token, transaction_id):
+    request = requests.post(
+        DOMAIN + "/notifications/confirm/",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "transaction_id": transaction_id,
+            "action": "finish",
+        },
     )
-    print("TO USER IS BEING: ", user_id)
+    response = request.json()
+    return {"message": response, "status_code": request.status_code}
+
+
+def request_delivery(token, load_id, action):
     request = requests.post(
         DOMAIN + "/notifications/create/",
         headers={"Authorization": f"Bearer {token}"},
-        data={
-            "load_id": int(load_id),
-            "to_user": int(user_id),
-            "action": action,
-        },
+        data={"load_id": int(load_id), "action": action},
     )
     response = request.json()
     return response

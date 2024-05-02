@@ -73,11 +73,10 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
         "phonenumber": data["phonenumber"],
         "first_name": query.from_user.first_name,
         "last_name": query.from_user.last_name,
-        "telegram_id": query.from_user.id,
         "password": data["password"],
         "user_type": data["role"],
     }
-    response = register_user(context_data)
+    response = register_user(context_data, telegram_id=query.from_user.id)
     if response["status_code"] == 400:
         await bot.send_message(
             query.message.chat.id,
