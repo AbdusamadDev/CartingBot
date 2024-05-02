@@ -194,3 +194,20 @@ async def client_show_my_load_handler(query: types.CallbackQuery):
     await bot.send_message(
         chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
     )
+
+
+async def client_FINISH_processes(query: types.CallbackQuery):
+    transaction_uuid = query.data.split("splitting_part")[-1]
+    token = get_user_by_telegram_id(query.from_user.id)
+    print(9999999999999999999999999999999999999999999, transaction_uuid)
+    if token:
+        token = token[2]
+    response = client_FINISH_all_processes_request(
+        transaction_id=transaction_uuid,
+        token=token,
+        action="finish_client",
+        status="yes",
+    )
+    await bot.send_message(query.from_user.id, text=str(response))
+
+

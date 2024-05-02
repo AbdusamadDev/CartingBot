@@ -7,6 +7,7 @@ from bot.roles.client import (
     process_add_load_callback,
     process_district_callback,
     process_address_callback,
+    client_FINISH_processes,
     process_region_callback,
     process_choice_handler,
     process_image_handler,
@@ -30,6 +31,7 @@ from bot.globals import (
     get_notifications_handler,
     profile_view_callback,
     confirm_handler,
+    reject_handler,
 )
 from bot.auth.registration_handlers import (
     share_number_for_registration,
@@ -71,6 +73,7 @@ def register_client_handlers(dp: Dispatcher):
         ("region:", LoadCreationState.region, process_region_callback),
         ("choice", LoadCreationState.product_type, process_choice_handler),
         ("district", LoadCreationState.district, process_district_callback),
+        ("confirm_load_splitting_part", None, client_FINISH_processes),
         (
             "next_to_receiver_phone_number",
             LoadCreationState.district,
@@ -86,6 +89,9 @@ def register_client_handlers(dp: Dispatcher):
             state=state,
         )
 
+    dp.register_callback_query_handler(
+        text_contains="deny_confirmation", callback=reject_handler
+    )
     # Register message handlers for load creation flow
     message_handlers = [
         (LoadCreationState.receiver_phone_number, None, process_receiver_phone_number),
@@ -139,6 +145,9 @@ def register_driver_handlers(dp: Dispatcher):
     dp.register_callback_query_handler(
         text_contains="driver_successfully_delivered",
         callback=finished_delivery_request_to_client,
+    )
+    dp.register_callback_query_handler(
+        text_contains="decline_request", callback=reject_handler
     )
 
 

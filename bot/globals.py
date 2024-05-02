@@ -6,6 +6,7 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from bot.states import *
 from bot.conf import bot
+import asyncio
 
 
 async def profile_view_callback(query: types.CallbackQuery, state: FSMContext):
@@ -22,6 +23,11 @@ async def profile_view_callback(query: types.CallbackQuery, state: FSMContext):
         )
     else:
         await query.message.answer("Failed to fetch profile details.")
+
+
+async def reject_handler(query: types.CallbackQuery):
+    await asyncio.sleep(1.5)
+    await bot.send_message(query.from_user.id, text="Successfully rejected!")
 
 
 async def get_notifications_handler(query: types.CallbackQuery):

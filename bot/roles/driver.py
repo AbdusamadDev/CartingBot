@@ -54,29 +54,26 @@ async def driver_to_client_request_handler(query: types.CallbackQuery):
     load_object = load_object["message"]
     response = request_delivery(action="request_load", load_id=load_id, token=token)
     await bot.send_message(query.from_user.id, text=str(response))
-    # transaction = get_transaction(load_id)
-    # if transaction["status_code"] == 200:
-    #     transaction = transaction["message"]
-    #     print(transaction)
-    #     transaction_id = transaction["uuid"]
-    #     telegram_id = transaction["driver"]["user"]["telegram_id"]
-    #     await bot.send_message(
-    #         telegram_id,
-    #         text=str(response),
-    #         reply_markup=successfully_delivered_btn(transaction_id),
-    #     )
-    # else:
-    #     print("Failed")
-    #     await bot.send_message(
-    #         query.from_user.id, text=f"Failed to take that load, sorry {transaction}"
-    #     )
 
 
 # Callback Data: driver_successfully_delivered:<>
 async def finished_delivery_request_to_client(query: types.CallbackQuery):
-    transaction_id = query.data.split(":")[-1]
+    load_id = query.data.split(":")[-1]
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
-    request = finished_delivery_request(token, transaction_id=transaction_id)
+    transaction = get_transaction(load_id)
+    if transaction["status_code"] == 404:
+        await bot.send_message(query.message.chat.id, text=str(transaction))
+        return
+    client_id = transaction["message"]["load"]["client"]["user"]["telegram_id"]
+    transaction_uuid = transaction["message"]["uuid"]
+    if client_id:
+        load = get_one_load_details(token, load_id=load_id)
+        await bot.send_message(
+            chat_id=client_id,
+            text=f"Your load {load} was delivered by {query.from_user.username}",
+            reply_markup=client_confirmation_btn(transaction_uuid=transaction_uuid),
+        )
+    request = finished_delivery_request(token, transaction_id=transaction_uuid)
     await bot.send_message(chat_id=query.from_user.id, text=str(request))

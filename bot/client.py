@@ -12,7 +12,9 @@ def verify_phonenumber(phonenumber, code):
 
 
 def register_user(data, telegram_id):
-    request = requests.post(DOMAIN + f"/accounts/register/?telegram_id={telegram_id}", json=data)
+    request = requests.post(
+        DOMAIN + f"/accounts/register/?telegram_id={telegram_id}", json=data
+    )
     response = request.json()
     status_code = request.status_code
     if "detail" in response.keys() and status_code == 400:
@@ -185,6 +187,20 @@ def get_one_load_details(token, load_id):
         headers={"Authorization": f"Bearer {token}"},
     )
     return {"message": request.json(), "status_code": request.status_code}
+
+
+def client_FINISH_all_processes_request(token, transaction_id, status, action):
+    request = requests.post(
+        DOMAIN + "/notifications/confirm/",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "transaction_id": transaction_id,
+            "status": status,
+            "action": action,
+        },
+    )
+    response = request.json()
+    return {"message": response, "status_code": request.status_code}
 
 
 def client_add_load(token, data, image_blob):
