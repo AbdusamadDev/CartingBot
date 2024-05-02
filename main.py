@@ -1,8 +1,7 @@
 from aiogram import executor
 import logging
-import asyncio
 
-from bot.database import create_table
+from bot.database import create_table, clear_database
 from bot.conf import dp
 from bot.register import (
     register_registration_handlers,
@@ -17,6 +16,7 @@ from bot.register import (
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
+    clear_database()
     create_table()
     register_registration_handlers(dp)
     register_dispatcher_handlers(dp)
