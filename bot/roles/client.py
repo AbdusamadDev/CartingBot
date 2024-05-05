@@ -10,8 +10,7 @@ import re
 
 
 async def process_add_load_callback(query: types.CallbackQuery, state: FSMContext):
-    await bot.send_message(
-        query.message.chat.id,
+    await query.message.answer(
         text="Zo'r, endi, iltimos, yukingizning rasmini yuboring!",
     )
     await LoadCreationState.image.set()
@@ -165,9 +164,7 @@ async def process_receiver_phone_number(message: types.Message, state: FSMContex
 
 # Handler to gather delivery date
 async def process_delivery_date(message: types.Message, state: FSMContext):
-    token = get_user_by_telegram_id(message.from_user.id)
-    if token:
-        token = token[2]
+    token = authenticate(bot, message.from_user.id)
     async with state.proxy() as data:
         if not re.match(r"^\d{4}-\d{2}-\d{2}$", message.text):
             await message.answer(
@@ -181,9 +178,15 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
         response = client_add_load(
             data=data.as_dict(), token=token, image_blob=image_blob
         )
+        if response["status_code"] != 200:
+            await message.answer(
+                "🚫 Sizning yukingiz qabul qilinmadi. Iltimos, qayta urinib ko'ring.",
+                reply_markup=load_creation_retry_btn(),
+            )
+            await LoadCreationState.image.set()
+            return
     await message.answer(
-        # f"Cool, your load {data['product_name']} was successfully added!",
-        str(response),
+        "✅ Sizning yukingiz muvaffaqiyatli qo'shildi!",
         reply_markup=take_me_back_markup,
     )
     await state.finish()
@@ -198,7 +201,6 @@ async def client_show_my_load_handler(query: types.CallbackQuery, state: FSMCont
         await query.message.delete()
     if response["status_code"] == 200:
         response = response["message"]
-        print(index)
         detail = response[index]
         status = {"active": "🟩", "wait": "🟦", "cancel": "🟥", "process": "🟨"}
         message_list = [
@@ -234,13 +236,15 @@ async def client_show_my_load_handler(query: types.CallbackQuery, state: FSMCont
 
 async def client_FINISH_processes(query: types.CallbackQuery):
     transaction_uuid = query.data.split("splitting_part")[-1]
-    token = get_user_by_telegram_id(query.from_user.id)
-    if token:
-        token = token[2]
+    token = await authenticate(bot=bot, telegram_id=query.from_user.id)
     response = client_FINISH_all_processes_request(
         transaction_id=transaction_uuid,
         token=token,
         action="finish_client",
         status="yes",
     )
-    await bot.send_message(query.from_user.id, text=str(response))
+    if response["status_code"] == 200:
+        text = "✅ Muvaffaqiyatli tasdiqlandi!"
+    else:
+        text = "🚫 Xatolik yuz berdi, tugmachani qayta bosing!"
+    await query.message.answer(text=text)

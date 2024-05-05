@@ -90,7 +90,7 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
         insert_user(telegram_id=query.from_user.id, token=token)
         user_button = {
             "driver": driver_buttons,
-            "client": get_clients_buttons(0, ""),
+            "client": get_clients_buttons(0),
             "dispatcher": dispatcher_buttons,
         }
         await state.finish()

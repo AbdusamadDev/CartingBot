@@ -22,6 +22,14 @@ loads_button = lambda index, text: InlineKeyboardButton(
 )
 
 
+def load_creation_retry_btn():
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton(text="Qayta urinish", callback_data="retry_add_load")
+    )
+    return markup
+
+
 def get_clients_buttons(index):
     client_buttons = InlineKeyboardMarkup(row_width=2)
     client_btn = [

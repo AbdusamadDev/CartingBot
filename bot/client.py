@@ -18,7 +18,6 @@ def register_user(data, telegram_id):
     response = request.json()
     status_code = request.status_code
     if "detail" in response.keys() and status_code == 400:
-        print("400 TASHADI")
         return {
             "message": "Account with this phone number already registered",
             "status_code": status_code,
@@ -213,7 +212,7 @@ def client_add_load(token, data, image_blob):
             data=data,
         )
 
-        return response.json()
+        return {"message": response.json(), "status_code": response.status_code}
     except Exception as e:
         print("An error occurred:", e)
         return None

@@ -68,12 +68,13 @@ def register_client_handlers(dp: Dispatcher):
 
     # Register callback query handlers for load creation flow
     callback_query_handlers = [
+        ("district", LoadCreationState.district, process_district_callback),
+        ("choice", LoadCreationState.product_type, process_choice_handler),
+        ("confirm_load_splitting_part", None, client_FINISH_processes),
+        ("region:", LoadCreationState.region, process_region_callback),
+        ("retry_add_load", None, process_add_load_callback),
         ("show_my_load", None, client_show_my_load_handler),
         ("add_load", None, process_add_load_callback),
-        ("region:", LoadCreationState.region, process_region_callback),
-        ("choice", LoadCreationState.product_type, process_choice_handler),
-        ("district", LoadCreationState.district, process_district_callback),
-        ("confirm_load_splitting_part", None, client_FINISH_processes),
         (
             "next_to_receiver_phone_number",
             LoadCreationState.district,
