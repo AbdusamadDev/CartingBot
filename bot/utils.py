@@ -26,9 +26,9 @@ async def authenticate(bot, telegram_id, profile_view=False):
             )
     else:
         await bot.send_message(telegram_id, "👋")
-        bot.reply_markup = contact_btn
         await exception(
-            "Carting Logistics Service botiga xush kelibsiz! Iltimos ro'yxatdan o'tish uchun telefon raqamingizni quyidagi ko'rinishda kiriting: +998 (xx) xxx-xx-xx [e.g +998941234567]"
+            "Carting Logistics Service botiga xush kelibsiz! Iltimos ro'yxatdan o'tish uchun telefon raqamingizni quyidagi ko'rinishda kiriting: +998 (xx) xxx-xx-xx [e.g +998941234567]",
+            reply_markup=contact_btn,
         )
     return
 
