@@ -38,6 +38,13 @@ def get_profile_details(token):
         return {"message": response, "status_code": status_code}
 
 
+def user_exists_in_backend(telegram_id):
+    request = requests.get(DOMAIN + f"/accounts/get-user/{telegram_id}/")
+    if request.status_code == 200:
+        return True
+    return False
+
+
 def login_user(phonenumber, password):
     request = requests.post(
         DOMAIN + "/accounts/login/",
@@ -48,7 +55,7 @@ def login_user(phonenumber, password):
         return {
             "message": response["error"],
             "status_code": 401,
-        }  # Authentication failed
+        }
     return {"message": response, "status_code": 200}
 
 
@@ -220,3 +227,4 @@ def client_add_load(token, data, image_blob):
 
 if __name__ == "__main__":
     token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwMDA3NDI2LCJpYXQiOjE3MTM5NTk0MjYsImp0aSI6IjM4NzY1ODMyZjZkMTRiMjhiMTk1ZTYyMDA4MjE2MjQ0IiwidXNlcl9pZCI6MzN9.CoYiowoB9X64a497sz5ygrQkNcjmA9tm5GS-0a6ee2Y"
+    print(user_exists_in_backend(2003049919))

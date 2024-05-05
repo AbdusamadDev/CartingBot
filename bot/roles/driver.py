@@ -52,7 +52,6 @@ async def driver_to_client_request_handler(query: types.CallbackQuery):
     await bot.send_message(query.from_user.id, text=str(response))
 
 
-# Callback Data: driver_successfully_delivered:<>
 async def finished_delivery_request_to_client(query: types.CallbackQuery):
     load_id = query.data.split(":")[-1]
     token = await authenticate(bot, query.from_user.id)

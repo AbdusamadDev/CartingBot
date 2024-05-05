@@ -2,8 +2,9 @@ import requests
 import base64
 
 from bot.database import get_user_by_telegram_id
-from bot.client import get_profile_details
+from bot.client import get_profile_details, user_exists_in_backend
 from bot.buttons import contact_btn
+from bot.states import LoginState
 
 
 async def authenticate(bot, telegram_id, profile_view=False):
@@ -15,7 +16,11 @@ async def authenticate(bot, telegram_id, profile_view=False):
         token = token[2]
         profile_details = get_profile_details(token)
         if profile_details["status_code"] == 401:
-            await exception("Tizimga kirib bolmadi, iltimos qayta login qiling!")
+            await exception(
+                "Tashrif buyirganingizga ko'p vaqt o'tdi, iltimos login qilish uchun telefon raqamingizni kiriting!"
+            )
+            await LoginState.phonenumber.set()
+            return
         elif profile_details["status_code"] == 200:
             if profile_view:
                 return profile_details["message"]
@@ -26,13 +31,19 @@ async def authenticate(bot, telegram_id, profile_view=False):
                 telegram_id,
                 text="Tizimda kutilmagan xatolik yuz berdi, qayta urinib ko'ring!",
             )
+            return
     else:
-        await bot.send_message(telegram_id, "👋")
-        await exception(
-            text="Carting Logistics Service botiga xush kelibsiz! Iltimos ro'yxatdan o'tish uchun telefon raqamingizni quyidagi ko'rinishda kiriting: +998 (xx) xxx-xx-xx [e.g +998941234567]",
-            reply_markup=contact_btn,
-        )
-    return
+        if user_exists_in_backend(telegram_id):
+            await exception("Iltimos login qilish uchun telefon raqamingizni kiriting!")
+            await LoginState.phonenumber.set()
+            return
+        else:
+            await bot.send_message(telegram_id, "👋")
+            await exception(
+                text="Carting Logistics Service botiga xush kelibsiz! Iltimos ro'yxatdan o'tish uchun telefon raqamingizni quyidagi ko'rinishda kiriting: +998 (xx) xxx-xx-xx [e.g +998941234567]",
+                reply_markup=contact_btn,
+            )
+            return
 
 
 def is_valid(input_string):
