@@ -8,7 +8,9 @@ from bot.buttons import contact_btn
 
 async def authenticate(bot, telegram_id, profile_view=False):
     token = get_user_by_telegram_id(telegram_id)
-    exception = lambda text: bot.send_message(telegram_id, text=text)
+    exception = lambda text, reply_markup=None: bot.send_message(
+        telegram_id, text=text, reply_markup=reply_markup
+    )
     if token:
         token = token[2]
         profile_details = get_profile_details(token)
@@ -27,7 +29,7 @@ async def authenticate(bot, telegram_id, profile_view=False):
     else:
         await bot.send_message(telegram_id, "👋")
         await exception(
-            "Carting Logistics Service botiga xush kelibsiz! Iltimos ro'yxatdan o'tish uchun telefon raqamingizni quyidagi ko'rinishda kiriting: +998 (xx) xxx-xx-xx [e.g +998941234567]",
+            text="Carting Logistics Service botiga xush kelibsiz! Iltimos ro'yxatdan o'tish uchun telefon raqamingizni quyidagi ko'rinishda kiriting: +998 (xx) xxx-xx-xx [e.g +998941234567]",
             reply_markup=contact_btn,
         )
     return
