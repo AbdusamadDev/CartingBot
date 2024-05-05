@@ -11,7 +11,8 @@ import re
 
 async def process_add_load_callback(query: types.CallbackQuery, state: FSMContext):
     await bot.send_message(
-        query.message.chat.id, text="Cool now, Please send your load's picture please!"
+        query.message.chat.id,
+        text="Zo'r, endi, iltimos, yukingizning rasmini yuboring!",
     )
     await LoadCreationState.image.set()
 
@@ -36,7 +37,7 @@ async def process_image_handler(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["image"] = photo_url  # Save the photo URL in the state
     await message.answer(
-        "How do you title your load as, please give a name for it..."
+        "Yukingizni qanday nomlaysiz, unga nom bering..."
     )  # Prompt user for the load name
     await LoadCreationState.product_name.set()  # Move to the next state to collect load name
 
@@ -58,7 +59,7 @@ async def process_product_name(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["product_name"] = message.text  # Save the provided load name in the state
     await message.answer(
-        "Okay, please provide a brief description of the load."
+        "Yaxshi, iltimos, yukning qisqacha tavsifini bering."
     )  # Prompt user for more detailed load information
     await LoadCreationState.product_info.set()  # Move to the next state to collect more load information
 
@@ -67,7 +68,7 @@ async def process_product_info(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["product_info"] = message.text
     await message.answer(
-        "What kind of load is your load? Please select following",
+        "Sizning yukingiz qanday yuk? Iltimos, quyidagini tanlang:",
         reply_markup=get_choices_button(),
     )
     await LoadCreationState.product_type.set()
@@ -77,7 +78,7 @@ async def process_choice_handler(query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data["product_type"] = query.data.split(":")[-1]
     await bot.send_message(
-        text="Now please enter the amount of your load, just digits are enough to process...",
+        text="Endi yuk miqdorini kiriting, ishlov berish uchun faqat raqamlar kifoya qiladi...",
         chat_id=query.message.chat.id,
     )
     await LoadCreationState.product_count.set()
@@ -87,12 +88,14 @@ async def process_product_count(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         if not message.text.isdigit():
             await message.answer(
-                "🚫 As it is mentioned, please provide only number of your load(s)."
+                "🚫 Yuqorida aytib o'tilganidek, iltimos, yuklaringizning faqat sonini ko'rsating."
             )
             await LoadCreationState.product_count.set()
             return
         data["product_count"] = int(message.text)
-    await message.answer("Where is your load located? Can you provide its address?")
+    await message.answer(
+        "Sizning yukingiz qayerda joylashgan? Uning manzilini bera olasizmi?"
+    )
     await LoadCreationState.address.set()
 
 
@@ -104,7 +107,7 @@ async def process_region_callback(query: types.CallbackQuery, state: FSMContext)
     )
     btn = get_district_selection_buttons(districts, state_data["end"])
     await query.message.edit_text(
-        text="Now, please provide route for your load to be delivered, choose following regions and districts which helps driver to drive these direction much more easier...",
+        text="Endi, iltimos, yukingizni etkazib berish uchun marshrutni ko'rsating, haydovchiga ushbu yo'nalishda harakatlanishini osonlashtiradigan quyidagi viloyat va tumanlarni tanlang ...",
         reply_markup=btn,
     )
     await LoadCreationState.next()
@@ -118,7 +121,7 @@ async def process_district_callback(query: types.CallbackQuery, state: FSMContex
         regions = fetch_districts_details(token[2])
         btn = regions_btn(regions)
         await query.message.edit_text(
-            f"Which districts of the region should driver drive through?",
+            f"Haydovchi viloyatning qaysi tumanlaridan o'tishi kerak?",
             reply_markup=btn,
         )
         await LoadCreationState.region.set()
@@ -132,7 +135,7 @@ async def process_address_callback(query: types.CallbackQuery, state: FSMContext
     to_location = get_selected_districts(query.message.reply_markup)
     await state.update_data(to_location=to_location)
     await query.message.answer(
-        "Almost there, please finalize process by entering a phone number of load reciever in this format: +998 (xx) xxx-xx-xx [e.g `+998991234567`]"
+        "Deyarli tugattik. Iltimos, ushbu formatdagi yuk qabul qiluvchining telefon raqamini kiritish orqali jarayonni yakunlang: +998 (xx) xxx-xx-xx [e.g `+998991234567`]"
     )
     await LoadCreationState.receiver_phone_number.set()
 
@@ -146,7 +149,7 @@ async def process_address(message: types.Message, state: FSMContext):
         data["regions"] = regions
         data["end"] = False
     btn = regions_btn(regions)
-    await message.answer("Please select region:", reply_markup=btn)
+    await message.answer("Iltimos, viloyatlarni tanlang:", reply_markup=btn)
     await LoadCreationState.region.set()
 
 
@@ -155,7 +158,7 @@ async def process_receiver_phone_number(message: types.Message, state: FSMContex
     async with state.proxy() as data:
         data["receiver_phone_number"] = message.text
     await message.answer(
-        "Please provide the delivery date in this format: (e.g., YYYY-MM-DD):"
+        "Iltimos, ushbu formatda etkazib berish sanasini ko'rsating: (e.g., YYYY-MM-DD):"
     )
     await LoadCreationState.date_delivery.set()
 
@@ -168,7 +171,7 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         if not re.match(r"^\d{4}-\d{2}-\d{2}$", message.text):
             await message.answer(
-                "🚫 Oops! This is not valid date, please enter valid data in this format: YYYY-MM-DD."
+                "🚫 Bu sana yaroqsiz, iltimos, ushbu formatda yaroqli maʼlumotlarni kiriting: YYYY-MM-DD."
             )
             await LoadCreationState.date_delivery.set()
             return
@@ -227,36 +230,6 @@ async def client_show_my_load_handler(query: types.CallbackQuery, state: FSMCont
             text=f"Batafsil: \n\n" + "".join(message_list),
             reply_markup=btn,
         )
-
-
-[
-    {
-        "receiver_phone_number": "+998991234567",
-        "product_count": 222.0,
-        "date_delivery": "2024-01-01T00:23:00+05:00",
-        "product_name": "qweqweqw",
-        "product_info": "asdasdasd",
-        "product_type": "m",
-        "from_location": ["Pop"],
-        "to_location": ["Angren"],
-        "address": "asdasdasd",
-        "status": "active",
-        "product_image": "http://new-api.carting.uz/media/load_images/188d7fd3-dfd2-4577-bb80-fab0920959a0.jpg",
-        "id": 144,
-        "client": {
-            "first_name": None,
-            "last_name": None,
-            "obj_status": "available",
-            "user": {
-                "phonenumber": "+998996685214",
-                "user_type": "client",
-                "first_name": None,
-                "last_name": None,
-                "id": 263,
-            },
-        },
-    }
-]
 
 
 async def client_FINISH_processes(query: types.CallbackQuery):
