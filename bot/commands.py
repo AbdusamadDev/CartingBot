@@ -11,7 +11,6 @@ async def start_handler(message: types.Message, state: FSMContext):
     await state.finish()
     profile = await authenticate(bot, message.from_user.id, profile_view=True)
     if profile:
-        print(profile)
         user_type = list(profile.keys())[0]
         await message.answer(
             f"Salom hush kelibsiz {message.from_user.username}, Bugun nima qilamiz?",

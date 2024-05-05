@@ -84,17 +84,9 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
         await TokenStorageState.token.set()
         await state.set_state(TokenStorageState.token)
         token = response["message"]["access"]
-        loads_list = get_client_personal_loads(token)
         await state.update_data(token=token)
         await LoadDetailsState.loads.set()
         await state.set_data(LoadDetailsState.loads)
-        await state.update_data(loads=loads_list)
-        if loads_list["status_code"] != 200:
-            await query.message.answer(
-                "Yuklarning malumotlarini olishda xatolik yuz berdi, iltimos qayta urinib ko'ring."
-            )
-            return
-        await state.update_data(page=0, max_length=len(loads_list["message"]))
         insert_user(telegram_id=query.from_user.id, token=token)
         user_button = {
             "driver": driver_buttons,
