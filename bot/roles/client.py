@@ -1,5 +1,5 @@
 from aiogram.dispatcher import FSMContext
-from bot.states import LoadCreationState
+from bot.states import *
 from bot.conf import bot
 from aiogram import types
 from bot.buttons import *
@@ -186,20 +186,82 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
     await state.finish()
 
 
-async def client_show_my_load_handler(query: types.CallbackQuery):
-    token = get_user_by_telegram_id(query.from_user.id)
-    if token:
-        token = token[2]
+async def client_show_my_load_handler(query: types.CallbackQuery, state: FSMContext):
+    print(query.data)
+    index = int(query.data.split(":")[-1])
+    token = await authenticate(bot, query.from_user.id)
     response = get_client_personal_loads(token)
-    await bot.send_message(
-        chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
-    )
+    if "Qabul qiluvchining telefon raqami" in query.message.text:
+        await query.message.delete()
+    if response["status_code"] == 200:
+        response = response["message"]
+        print(index)
+        detail = response[index]
+        status = {"active": "🟩", "wait": "🟦", "cancel": "🟥", "process": "🟨"}
+        message_list = [
+            f"\n\n ☎️ Qabul qiluvchining telefon raqami: {detail['receiver_phone_number']}",
+            f"\n\n 🔢 Miqdori: {detail['product_count']}",
+            f"\n\n 🏷 Nomi: {detail['product_name']}",
+            f"\n\n 📐 Turi: {detail['product_type']}",
+            f"\n\n 🖼 Rasm: {detail['product_image']}",
+            f"\n\n 📍 Manzili: {detail['address']}",
+            f"\n\n {status[detail['status']]} Holati: {detail['status']}",
+            f"\n\n 📅 Qabul qilish sanasi: {detail['date_delivery']}",
+            "Yukning yo`nalishi: "
+            + "".join([f"📍 {i} --> " for i in detail["from_location"]])[:-4],
+        ]
+    async with state.proxy() as data:
+        page = int(data.get("page", 0))
+        max_length = int(data.get("max_length", len(response) - 1))
+        if page > max_length:
+            page = 0
+        data["page"] = page + 1
+        btns = [
+            loads_button(page, "▶️ Keyingisi: " + response[page]["product_name"]),
+            InlineKeyboardButton(text="Asosiy menyu", callback_data="main_menu"),
+        ]
+        btn = InlineKeyboardMarkup(row_width=1)
+        btn.add(*btns)
+        await bot.send_message(
+            chat_id=query.message.chat.id,
+            text=f"Batafsil: \n\n" + "".join(message_list),
+            reply_markup=btn,
+        )
+
+
+[
+    {
+        "receiver_phone_number": "+998991234567",
+        "product_count": 222.0,
+        "date_delivery": "2024-01-01T00:23:00+05:00",
+        "product_name": "qweqweqw",
+        "product_info": "asdasdasd",
+        "product_type": "m",
+        "from_location": ["Pop"],
+        "to_location": ["Angren"],
+        "address": "asdasdasd",
+        "status": "active",
+        "product_image": "http://new-api.carting.uz/media/load_images/188d7fd3-dfd2-4577-bb80-fab0920959a0.jpg",
+        "id": 144,
+        "client": {
+            "first_name": None,
+            "last_name": None,
+            "obj_status": "available",
+            "user": {
+                "phonenumber": "+998996685214",
+                "user_type": "client",
+                "first_name": None,
+                "last_name": None,
+                "id": 263,
+            },
+        },
+    }
+]
 
 
 async def client_FINISH_processes(query: types.CallbackQuery):
     transaction_uuid = query.data.split("splitting_part")[-1]
     token = get_user_by_telegram_id(query.from_user.id)
-    print(9999999999999999999999999999999999999999999, transaction_uuid)
     if token:
         token = token[2]
     response = client_FINISH_all_processes_request(
@@ -209,5 +271,3 @@ async def client_FINISH_processes(query: types.CallbackQuery):
         status="yes",
     )
     await bot.send_message(query.from_user.id, text=str(response))
-
-

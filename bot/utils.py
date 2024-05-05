@@ -1,6 +1,37 @@
 import requests
 import base64
 
+from bot.database import get_user_by_telegram_id
+from bot.client import get_profile_details
+from bot.buttons import contact_btn
+
+
+async def authenticate(bot, telegram_id, profile_view=False):
+    token = get_user_by_telegram_id(telegram_id)
+    exception = lambda text: bot.send_message(telegram_id, text=text)
+    if token:
+        token = token[2]
+        profile_details = get_profile_details(token)
+        if profile_details["status_code"] == 401:
+            await exception("Tizimga kirib bolmadi, iltimos qayta login qiling!")
+        elif profile_details["status_code"] == 200:
+            if profile_view:
+                return profile_details["message"]
+            else:
+                return token
+        else:
+            await bot.send_message(
+                telegram_id,
+                text="Tizimda kutilmagan xatolik yuz berdi, qayta urinib ko'ring!",
+            )
+    else:
+        await bot.send_message(telegram_id, "👋")
+        bot.reply_markup = contact_btn
+        await exception(
+            "Carting Logistics Service botiga xush kelibsiz! Iltimos ro'yxatdan o'tish uchun telefon raqamingizni quyidagi ko'rinishda kiriting: +998 (xx) xxx-xx-xx [e.g +998941234567]"
+        )
+    return
+
 
 def is_valid(input_string):
     # Check if input starts with '+'
@@ -60,7 +91,6 @@ def url_to_base64(image_url):
         encoded_string = base64.b64encode(response.content)
         return encoded_string.decode("utf-8")
     except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
         return None
 
 

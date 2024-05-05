@@ -34,3 +34,9 @@ class TokenStorageState(StatesGroup):
 class LoginState(StatesGroup):
     phonenumber = State()
     password = State()
+
+
+class LoadDetailsState(StatesGroup):
+    loads = State()
+    page = State()
+    max_length = State()

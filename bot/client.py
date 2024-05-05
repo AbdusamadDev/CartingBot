@@ -97,7 +97,7 @@ def get_client_personal_loads(token):
         headers={"Authorization": f"Bearer {token}"},
     )
     response = request.json()
-    return response
+    return {"message": response, "status_code": request.status_code}
 
 
 def get_notifications(token):

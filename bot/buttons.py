@@ -10,31 +10,45 @@ from bot.conf import DOMAIN
 
 
 notifications_button = InlineKeyboardButton(
-    text="🔔 Show my notifications",
+    text="🔔 Mening eslatmalarim",
     callback_data="notifications",
 )
 driver_all_loads_btn = InlineKeyboardButton(
-    text="Show all loads", callback_data="show_all_driver_loads"
+    text="Barcha yuklarni ko'rish", callback_data="show_all_driver_loads"
 )
 
-client_buttons = InlineKeyboardMarkup(row_width=2)
-client_btn = [
-    notifications_button,
-    InlineKeyboardButton(text="📦 My loads", callback_data="show_my_load"),
-    InlineKeyboardButton(text="➕ Add load", callback_data="add_load"),
-    InlineKeyboardButton(text="👤 My profile", callback_data="profile_view"),
-]
-client_buttons.add(*client_btn)
+loads_button = lambda index, text: InlineKeyboardButton(
+    text=text, callback_data=f"show_my_load:{index}"
+)
+
+
+def get_clients_buttons(index):
+    client_buttons = InlineKeyboardMarkup(row_width=2)
+    client_btn = [
+        notifications_button,
+        loads_button(index, "📦 Mening yuklarim"),
+        InlineKeyboardButton(text="➕ Yuk qo'shish", callback_data="add_load"),
+        InlineKeyboardButton(text="👤 Mening Profilim", callback_data="profile_view"),
+    ]
+    client_buttons.add(*client_btn)
+    return client_buttons
 
 
 driver_buttons = InlineKeyboardMarkup()
 driver_btn = [
     notifications_button,
-    InlineKeyboardButton(text="📦 My loads", callback_data="show_load"),
-    InlineKeyboardButton(text="👤 My profile", callback_data="profile_view"),
+    InlineKeyboardButton(text="📦 Mening yuklarim", callback_data="show_load"),
+    InlineKeyboardButton(text="👤 Mening Profilim", callback_data="profile_view"),
     driver_all_loads_btn,
 ]
 driver_buttons.add(*driver_btn)
+
+keyboard = InlineKeyboardMarkup(row_width=1)
+keyboard.add(
+    InlineKeyboardButton(text="🚛 Haydovchi", callback_data="driver"),
+    # InlineKeyboardButton(text="👨‍🔧 Dispatcher", callback_data="dispatcher"),
+    InlineKeyboardButton(text="👤 Foydalanuvchi", callback_data="client"),
+)
 
 dispatcher_buttons = InlineKeyboardMarkup()
 dispatcher_btn = [
@@ -49,7 +63,9 @@ dispatcher_btn = [
     InlineKeyboardButton(
         text="👥 Available Drivers", callback_data="dispatcher_show_drivers"
     ),
-    InlineKeyboardButton(text="📦 My Loads", callback_data="dispatcher_get_my_loads"),
+    InlineKeyboardButton(
+        text="📦 Mening yuklasrim", callback_data="dispatcher_get_my_loads"
+    ),
     InlineKeyboardButton(text="👤 My profile", callback_data="profile_view"),
 ]
 dispatcher_buttons.add(*dispatcher_btn)
@@ -83,13 +99,13 @@ def client_confirmation_btn(transaction_uuid):
     markup = InlineKeyboardMarkup(row_width=1)
     markup.add(
         InlineKeyboardButton(
-            text="Confirm",
+            text="✅ Tasdiqlash",
             callback_data=f"confirm_load_splitting_part{transaction_uuid}",
         ),
     )
     markup.add(
         InlineKeyboardButton(
-            text="Didnt get the load!", callback_data="deny_confirmation"
+            text="🚫 Yuk yetib kelmadi!", callback_data="deny_confirmation"
         )
     )
     return markup
@@ -99,7 +115,7 @@ def successfully_delivered_btn(transaction_id):
     markup = InlineKeyboardMarkup(row_width=1)
     markup.add(
         InlineKeyboardButton(
-            text="Successfully delivered the load",
+            text="Yukni yetqazib berildi!",
             callback_data=f"driver_successfully_delivered:{transaction_id}",
         )
     )
@@ -107,7 +123,9 @@ def successfully_delivered_btn(transaction_id):
 
 
 contact_btn = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text="Share my phone number", request_contact=True)]],
+    keyboard=[
+        [KeyboardButton(text="Telefon raqamimni jo'natish", request_contact=True)]
+    ],
     resize_keyboard=True,
     one_time_keyboard=True,
 )
@@ -141,7 +159,7 @@ def get_one_driver_button(driver_id):
     keyboard = InlineKeyboardMarkup(row_width=1)
     keyboard.add(
         InlineKeyboardButton(
-            text=f"Request to this driver",
+            text=f"Yuk tashuvchini tanlash",
             callback_data=f"driver_get_load_{driver_id}",
         )
     )
@@ -151,7 +169,7 @@ def get_one_driver_button(driver_id):
 def get_buttons_by_role(role):
     user_button = {
         "driver": driver_buttons,
-        "client": client_buttons,
+        "client": get_clients_buttons(0),
         "dispatcher": dispatcher_buttons,
     }
     return user_button[role]
@@ -185,12 +203,12 @@ def get_district_selection_buttons(districts, end=False):
     )
     if end:
         next_btn = InlineKeyboardButton(
-            text="Next ⏩",
+            text="Keyingisi ⏩",
             callback_data="next_to_receiver_phone_number",
         )
     else:
         next_btn = InlineKeyboardButton(
-            text="Next ⏩",
+            text="Keyingisi ⏩",
             callback_data="district_next",
         )
     keyboard.row(next_btn)
@@ -214,5 +232,5 @@ def get_choices_button():
 
 
 take_me_back_markup = InlineKeyboardMarkup().add(
-    InlineKeyboardButton(text="Main menu", callback_data="main_menu")
+    InlineKeyboardButton(text="Asosiy menyu", callback_data="main_menu")
 )
