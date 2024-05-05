@@ -9,7 +9,6 @@ from bot.conf import bot
 
 
 async def show_my_loads(query: types.CallbackQuery):
-    logging.info("Attempting to send personal loads...")
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
@@ -72,7 +71,7 @@ async def finished_delivery_request_to_client(query: types.CallbackQuery):
         load = get_one_load_details(token, load_id=load_id)
         await bot.send_message(
             chat_id=client_id,
-            text=f"Your load {load} was delivered by {query.from_user.username}",
+            text=f"Sizning yukingiz: {load} {query.from_user.username} tomonidan yetqazib berildi!",
             reply_markup=client_confirmation_btn(transaction_uuid=transaction_uuid),
         )
     request = finished_delivery_request(token, transaction_id=transaction_uuid)

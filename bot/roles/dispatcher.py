@@ -51,7 +51,6 @@ async def dispatcher_show_all_loads_handler(query: types.CallbackQuery):
 async def dispatcher_request_to_driver_handler(
     query: types.CallbackQuery, state: FSMContext
 ):
-    print("[INFO] Requesting to driver")
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
@@ -65,7 +64,6 @@ async def dispatcher_request_to_driver_handler(
 
 
 async def ask_for_which_load_handler(query: types.CallbackQuery, state: FSMContext):
-    print("[INFO] Choosing load from loads list")
     driver_id = query.data.split("_")[-1]
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
