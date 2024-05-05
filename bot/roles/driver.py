@@ -1,11 +1,10 @@
 from aiogram import types
-import logging
-import asyncio
 
 from bot.client import *
 from bot.database import get_user_by_telegram_id
 from bot.buttons import *
 from bot.conf import bot
+from bot.utils import *
 
 
 async def show_my_loads(query: types.CallbackQuery):
@@ -41,9 +40,7 @@ async def show_all_loads_for_driver(query: types.CallbackQuery):
 
 
 async def driver_to_client_request_handler(query: types.CallbackQuery):
-    token = get_user_by_telegram_id(query.from_user.id)
-    if token:
-        token = token[2]
+    token = await authenticate(bot, token)
     load_id = int(query.data.split(":")[-1])
     print("Load ID: ", load_id)
     load_object = get_one_load_details(token=token, load_id=load_id)
@@ -58,9 +55,7 @@ async def driver_to_client_request_handler(query: types.CallbackQuery):
 # Callback Data: driver_successfully_delivered:<>
 async def finished_delivery_request_to_client(query: types.CallbackQuery):
     load_id = query.data.split(":")[-1]
-    token = get_user_by_telegram_id(query.from_user.id)
-    if token:
-        token = token[2]
+    token = await authenticate(bot, query.from_user.id)
     transaction = get_transaction(load_id)
     if transaction["status_code"] == 404:
         await bot.send_message(query.message.chat.id, text=str(transaction))
