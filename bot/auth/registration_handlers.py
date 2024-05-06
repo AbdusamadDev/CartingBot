@@ -40,7 +40,7 @@ async def process_sms_code(message: types.Message, state: FSMContext):
         await RegistrationState.password.set()
     else:
         await message.answer(
-            "🚫 Activatsiya kodi noto'g'ri. Iltimos qayta urinib ko'ring"
+            "🚫 Activatsiya kodi noto'g'ri. Iltimos qayta urinib ko'ring: Activatsiya kodi: (1111)"
         )
         await RegistrationState.sms_code.set()
 

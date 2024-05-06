@@ -18,7 +18,7 @@ async def show_my_loads(query: types.CallbackQuery):
         load_details = f"📦 {load['product_name']}\n📅 {load['date_delivery']}\n📌 From: {', '.join(load['from_location'])}\n📌 To: {', '.join(load['to_location'])}\n\n"
         message += load_details
         button_text = f"Load {index}"
-        load_buttons.append(
+        load_buttons.append(    
             types.InlineKeyboardButton(
                 text=button_text, callback_data=f"load_details:{load['id']}"
             )
