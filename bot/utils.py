@@ -1,10 +1,10 @@
 import requests
 import base64
 
-from bot.database import get_user_by_telegram_id
 from bot.client import get_profile_details, user_exists_in_backend
+from bot.database import get_user_by_telegram_id
 from bot.buttons import contact_btn
-from bot.states import LoginState
+from bot.states import *
 
 
 async def authenticate(bot, telegram_id, profile_view=False):
@@ -13,37 +13,42 @@ async def authenticate(bot, telegram_id, profile_view=False):
         telegram_id, text=text, reply_markup=reply_markup
     )
     if token:
+        print("Token exists")
         token = token[2]
         profile_details = get_profile_details(token)
         if profile_details["status_code"] == 401:
+            print("Token is invalid")
             await exception(
                 "Tashrif buyirganingizga ko'p vaqt o'tdi, iltimos login qilish uchun telefon raqamingizni kiriting!"
             )
             await LoginState.phonenumber.set()
             return
         elif profile_details["status_code"] == 200:
+            print("Token is valid")
             if profile_view:
+                print("Profile view mode is on, returning profile details")
                 return profile_details["message"]
             else:
+                print("Profile view mode is off, just returning token")
                 return token
-        else:
-            await bot.send_message(
-                telegram_id,
-                text="Tizimda kutilmagan xatolik yuz berdi, qayta urinib ko'ring!",
-            )
-            return
     else:
+        print("Token does not exist in database")
         if user_exists_in_backend(telegram_id):
+            print("_______________________")
+            print("User exists in backend")
             await exception("Iltimos login qilish uchun telefon raqamingizni kiriting!")
             await LoginState.phonenumber.set()
             return
         else:
+            print("User does not exist in backend")
             await bot.send_message(telegram_id, "👋")
             await exception(
                 text="Carting Logistics Service botiga xush kelibsiz! Iltimos ro'yxatdan o'tish uchun telefon raqamingizni quyidagi ko'rinishda kiriting: +998 (xx) xxx-xx-xx [e.g +998941234567]",
                 reply_markup=contact_btn,
             )
+            await RegistrationState.phonenumber.set()
             return
+    return
 
 
 def is_valid(input_string):

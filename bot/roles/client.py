@@ -164,7 +164,7 @@ async def process_receiver_phone_number(message: types.Message, state: FSMContex
 
 # Handler to gather delivery date
 async def process_delivery_date(message: types.Message, state: FSMContext):
-    token = authenticate(bot, message.from_user.id)
+    token = await authenticate(bot, message.from_user.id)
     async with state.proxy() as data:
         if not re.match(r"^\d{4}-\d{2}-\d{2}$", message.text):
             await message.answer(
@@ -178,7 +178,7 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
         response = client_add_load(
             data=data.as_dict(), token=token, image_blob=image_blob
         )
-        if response["status_code"] != 200:
+        if response["status_code"] != 201:
             await message.answer(
                 "🚫 Sizning yukingiz qabul qilinmadi. Iltimos, qayta urinib ko'ring.",
                 reply_markup=load_creation_retry_btn(),
@@ -216,17 +216,21 @@ async def client_show_my_load_handler(query: types.CallbackQuery, state: FSMCont
             + "".join([f"📍 {i} --> " for i in detail["from_location"]])[:-4],
         ]
     async with state.proxy() as data:
-        page = int(data.get("page", 0))
-        max_length = int(data.get("max_length", len(response) - 1))
-        if page > max_length:
-            page = 0
-        data["page"] = page + 1
-        btns = [
-            loads_button(page, "▶️ Keyingisi: " + response[page]["product_name"]),
-            InlineKeyboardButton(text="Asosiy menyu", callback_data="main_menu"),
-        ]
-        btn = InlineKeyboardMarkup(row_width=1)
-        btn.add(*btns)
+        try:
+            page = int(data.get("page", 0))
+            max_length = int(data.get("max_length", len(response) - 1))
+            if page > max_length:
+                page = 0
+            data["page"] = page + 1
+            btns = [
+                loads_button(page, "▶️ Keyingisi: " + response[page]["product_name"]),
+                InlineKeyboardButton(text="Asosiy menyu", callback_data="main_menu"),
+            ]
+            btn = InlineKeyboardMarkup(row_width=1)
+            btn.add(*btns)
+        except KeyError:
+            await query.message.answer("Sizda hali yuklar yoq.")
+            return
         await bot.send_message(
             chat_id=query.message.chat.id,
             text=f"Batafsil: \n\n" + "".join(message_list),

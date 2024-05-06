@@ -49,6 +49,7 @@ from bot.roles.driver import (
     finished_delivery_request_to_client,
     driver_to_client_request_handler,
     show_all_loads_for_driver,
+    load_details_callback,
     show_my_loads,
 )
 from bot.commands import start_handler
@@ -126,6 +127,9 @@ def register_driver_handlers(dp: Dispatcher):
     There are no return values for this function as it is expected to operate asynchronously and
     register handlers that will be invoked by the aiogram event loop.
     """
+    dp.register_callback_query_handler(
+        text_contains="load_details", callback=load_details_callback
+    )
     dp.register_callback_query_handler(
         text_contains="show_load", callback=show_my_loads
     )
