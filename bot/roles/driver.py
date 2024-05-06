@@ -125,17 +125,68 @@ async def load_details_callback(query: types.CallbackQuery):
 
 async def show_all_loads_for_driver(query: types.CallbackQuery):
     token = await authenticate(bot, query.from_user.id)
-    loads = get_all_loads_dispatcher(token)
-    if loads["status_code"] == 200:
-        loads = loads["message"]["results"]
-        indices = [load["id"] for load in loads]
+    loads_response = get_all_loads_dispatcher(token)
+
+    if loads_response["status_code"] == 200:
+        loads = loads_response["message"]["results"]
+        message_text = ""
+        buttons = []
+        for load in loads:
+            index = load["id"]
+            load_name = load["product_name"]
+            message_text += f"{index}. {load_name}\n\n"
+            button_text = str(index)
+            callback_data = f"load_preview:{index}"
+            buttons.append(
+                types.InlineKeyboardButton(
+                    text=button_text, callback_data=callback_data
+                )
+            )
+
+        reply_markup = types.InlineKeyboardMarkup(row_width=10).add(*buttons)
         await bot.send_message(
             chat_id=query.message.chat.id,
-            text=str(loads),
-            reply_markup=get_loads_for_driver(indices=indices),
+            text=message_text,
+            reply_markup=reply_markup,
         )
     else:
-        await query.message.answer("Loads does not exist in backend.")
+        await query.message.answer("Loads do not exist in the backend.")
+
+
+async def load_preview(query: types.CallbackQuery):
+    load_id = query.data.split(":")[1]  # Extracting load ID from the callback data
+    token = await authenticate(bot, query.from_user.id)
+    load_details_response = get_one_load_details(token, load_id)
+
+    if load_details_response["status_code"] == 200:
+        load_details = load_details_response["message"]
+        # Construct a decorative message with load details
+        message_text = f"<b>Load Details:</b>\n\n"
+        message_text += f"<b>Name:</b> {load_details['product_name']}\n"
+        message_text += f"<b>Info:</b> {load_details['product_info']}\n"
+        message_text += f"<b>Count:</b> {load_details['product_count']}\n"
+        message_text += f"<b>Type:</b> {load_details['product_type']}\n"
+        message_text += f"<b>Status:</b> {load_details['status']}\n"
+        message_text += (
+            f"<b>From Location:</b> {', '.join(load_details['from_location'])}\n"
+        )
+        message_text += (
+            f"<b>To Location:</b> {', '.join(load_details['to_location'])}\n"
+        )
+        message_text += f"<b>Delivery Date:</b> {load_details['date_delivery']}\n"
+        markup = InlineKeyboardMarkup(row_width=5)
+        markup.add(
+            InlineKeyboardButton(
+                text="Shu yukni olish",
+                callback_data=f"driver_request_to_client:{load_id}",
+            )
+        )
+        # Send the decorative message
+        await query.message.answer(
+            text=message_text, parse_mode="HTML", reply_markup=markup
+        )
+    else:
+        await query.message.answer("Load details could not be retrieved.")
 
 
 async def driver_to_client_request_handler(query: types.CallbackQuery):
@@ -145,11 +196,16 @@ async def driver_to_client_request_handler(query: types.CallbackQuery):
     print("Load ID: ", load_id)
     load_object = get_one_load_details(token=token, load_id=load_id)
     if load_object["status_code"] != 200:
-        await bot.send_message(query.message.chat.id, text=str(load_object))
+        await bot.send_message(query.message.chat.id, text="Ma'lumot topilmadi")
         return
     load_object = load_object["message"]
     response = request_delivery(action="request_load", load_id=load_id, token=token)
-    await bot.send_message(query.from_user.id, text=str(response))
+    if "success" in str(response):
+        await bot.send_message(
+            query.from_user.id, text="So'rovingiz mijozga yuborildi!"
+        )
+    else:
+        await query.message.answer("Xatolik yuz berdi!")
 
 
 async def finished_delivery_request_to_client(query: types.CallbackQuery):
@@ -157,7 +213,7 @@ async def finished_delivery_request_to_client(query: types.CallbackQuery):
     token = await authenticate(bot, query.from_user.id)
     transaction = get_transaction(load_id)
     if transaction["status_code"] == 404:
-        await bot.send_message(query.message.chat.id, text=str(transaction))
+        await bot.send_message(query.message.chat.id, text="Malumot topilmadi!")
         return
     client_id = transaction["message"]["load"]["client"]["user"]["telegram_id"]
     transaction_uuid = transaction["message"]["uuid"]
@@ -165,8 +221,14 @@ async def finished_delivery_request_to_client(query: types.CallbackQuery):
         load = get_one_load_details(token, load_id=load_id)
         await bot.send_message(
             chat_id=client_id,
-            text=f"Sizning yukingiz: {load} {query.from_user.username} tomonidan yetqazib berildi!",
+            text=f"Sizning yukingiz: {load['message']['product_name']} {query.from_user.username} tomonidan yetqazib berildi!",
             reply_markup=client_confirmation_btn(transaction_uuid=transaction_uuid),
         )
     request = finished_delivery_request(token, transaction_id=transaction_uuid)
-    await bot.send_message(chat_id=query.from_user.id, text=str(request))
+    if request["status_code"] == 200:
+        await bot.send_message(
+            chat_id=query.from_user.id,
+            text="Tabriklaymiz, yukni yetkazib berildi va mijoz tomonidan tasdiqlandi!",
+        )
+    else:
+        await query.message.answer("Xatolik yuz berdi!")

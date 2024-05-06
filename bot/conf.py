@@ -14,3 +14,5 @@ DOMAIN = "https://new-api.carting.uz"
 # DOMAIN = "http://localhost:8000"
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot=bot, storage=MemoryStorage())
+
+

@@ -36,7 +36,32 @@ async def reject_handler(query: types.CallbackQuery):
 async def get_notifications_handler(query: types.CallbackQuery):
     token = await authenticate(bot, query.from_user.id)
     notifications = get_notifications(token)
-    await bot.send_message(query.message.chat.id, text=str(notifications))
+
+    if notifications:
+        message_text = "📬 <b>Notifications:</b>\n\n"
+        for notification in notifications:
+            load = notification["load"]
+            load_name = load["product_name"]
+            load_info = load["product_info"]
+            load_count = load["product_count"]
+            load_type = load["product_type"]
+            load_status = load["status"]
+            from_location = ", ".join(load["from_location"])
+            to_location = ", ".join(load["to_location"])
+            delivery_date = load["date_delivery"]
+
+            message_text += f"📦 <b>Name:</b> {load_name}\n"
+            message_text += f"ℹ️ <b>Info:</b> {load_info}\n"
+            message_text += f"🔢 <b>Count:</b> {load_count}\n"
+            message_text += f"📌 <b>Type:</b> {load_type}\n"
+            message_text += f"📝 <b>Status:</b> {load_status}\n"
+            message_text += f"📍 <b>From Location:</b> {from_location}\n"
+            message_text += f"📍 <b>To Location:</b> {to_location}\n"
+            message_text += f"📅 <b>Delivery Date:</b> {delivery_date}\n\n"
+
+        await query.message.answer(text=message_text, parse_mode="HTML")
+    else:
+        await query.message.answer("No notifications available. 🤷‍♂️")
 
 
 async def main_menu_callback_handler(query: types.CallbackQuery):
@@ -54,13 +79,13 @@ async def main_menu_callback_handler(query: types.CallbackQuery):
 async def confirm_handler(query: types.CallbackQuery):
     token = await authenticate(bot, query.from_user.id)
     user_type = query.data.split(":")[1]
-    transaction_id = query.data.split(":")[-1]
+    load_id = query.data.split(":")[-1]
     if user_type == "client":
         notification_id = query.data.split(":")[2]
         response = client_confirm_load_delivery(
             notification_id=notification_id, token=token
         )
-        transaction_object = get_transaction(transaction_id)
+        transaction_object = get_transaction(load_id)
         if transaction_object["status_code"] == 200:
             transaction_object = transaction_object["message"]
             if transaction_object["driver"] is not None:
@@ -68,7 +93,7 @@ async def confirm_handler(query: types.CallbackQuery):
                 await bot.send_message(
                     telegram_id,
                     text=f"Siz yetkazib berish jarayonini boshlashingiz mumkin, mijoz endigina tasdiqladi va yukni yetkazib berishingizga ruxsat berdi, bajarganingizdan keyin ularga xabar bering va quyidagi `Yakunladim` tugmasini bosing.",
-                    reply_markup=successfully_delivered_btn(transaction_id),
+                    reply_markup=successfully_delivered_btn(load_id),
                 )
         await bot.send_message(
             query.message.chat.id,

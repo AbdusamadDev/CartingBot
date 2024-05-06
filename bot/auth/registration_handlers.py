@@ -10,7 +10,10 @@ from bot.conf import bot
 
 async def process_phonenumber(message: types.Message, state: FSMContext):
     if not is_valid(message.text):
-        await message.answer("🚫 Iltimos yaroqli telefon raqam kiriting.")
+        await message.answer(
+            "🚫 Iltimos yaroqli telefon raqam kiriting.",
+            reply_markup=contact_btn,
+        )
         await RegistrationState.phonenumber.set()
         return
     async with state.proxy() as data:
@@ -58,7 +61,10 @@ async def handle_contact(message: types.Message, state: FSMContext):
         )
         await RegistrationState.sms_code.set()
     else:
-        await message.answer("Iltimos o'zingizni telefon raqamingizni kiriting.")
+        await message.answer(
+            "Iltimos o'zingizni telefon raqamingizni kiriting.",
+            reply_markup=contact_btn,
+        )
 
 
 async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
@@ -78,6 +84,7 @@ async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
         await bot.send_message(
             query.message.chat.id,
             "Ro'yxatdan o'tishda xatolik yuz berdi Qayta urining va telefon raqamingizni kiriting: +998 (xx) xxx-xx-xx [e.g `+998991234567`]",
+            reply_markup=contact_btn,
         )
         await RegistrationState.phonenumber.set()
     else:

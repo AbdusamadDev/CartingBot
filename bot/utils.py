@@ -19,7 +19,8 @@ async def authenticate(bot, telegram_id, profile_view=False):
         if profile_details["status_code"] == 401:
             print("Token is invalid")
             await exception(
-                "Tashrif buyirganingizga ko'p vaqt o'tdi, iltimos login qilish uchun telefon raqamingizni kiriting!"
+                "Tashrif buyirganingizga ko'p vaqt o'tdi, iltimos login qilish uchun telefon raqamingizni kiriting!",
+                reply_markup=contact_btn,
             )
             await LoginState.phonenumber.set()
             return
@@ -111,8 +112,6 @@ def url_to_base64(image_url):
         return encoded_string.decode("utf-8")
     except requests.exceptions.RequestException as e:
         return None
-
-
 
 
 status = {
