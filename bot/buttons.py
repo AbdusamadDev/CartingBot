@@ -125,7 +125,7 @@ def successfully_delivered_btn(transaction_id):
     markup.add(
         InlineKeyboardButton(
             text="Yukni yetqazib berildi!",
-            callback_data=f"driver_successfully_delivered:{transaction_id}",
+            callback_data=f"qqq:{transaction_id}",
         )
     )
     return markup

@@ -113,5 +113,21 @@ def url_to_base64(image_url):
         return None
 
 
+
+
+status = {
+    "active": "🟩",
+    "wait": "🟨",
+    "cancel": "🟥",
+    "process": "🟧",
+    "wait_driver": "🟨",
+    "confirmation_driver": "🟨",
+    "unfinish_dispatcher": "⬜️",
+    "unfinish_client": "⬜️",
+    "finish": "🟦",
+    "confirmation_dispatcher": "🟫",
+    "wait_dispatcher": "🟨",
+}
+
 if __name__ == "__main__":
     print(is_valid("998940055565"))

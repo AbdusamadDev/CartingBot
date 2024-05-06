@@ -205,7 +205,7 @@ async def client_show_my_load_handler(query: types.CallbackQuery, state: FSMCont
             return
         response = response["message"]
         detail = response[index]
-        status = {"active": "🟩", "wait": "🟦", "cancel": "🟥", "process": "🟨"}
+        
         message_list = [
             f"\n\n ☎️ Qabul qiluvchining telefon raqami: {detail['receiver_phone_number']}",
             f"\n\n 🔢 Miqdori: {detail['product_count']}",

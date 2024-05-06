@@ -7,88 +7,16 @@ from bot.conf import bot
 from bot.utils import *
 
 
-# async def show_my_loads(query: types.CallbackQuery):
-#     page = 1
-#     token = await authenticate(bot, query.from_user.id)
-#     response = get_my_loads(token=token, page=page)
-#     if response["status_code"] == 200:
-#         response =
-#         await send_paginated_load_details(query.message.chat.id, response, page)
-#     else:
-#         await query.message.answer("Sizda hali yuklar yo'q")
-
-
-# async def load_pagination_callback(query: types.CallbackQuery):
-#     action, current_page = query.data.split(":")[1:]
-#     current_page = int(current_page)
-#     if action == "next":
-#         next_page = current_page + 1
-#     elif action == "previous":
-#         next_page = current_page - 1
-#     else:
-#         return
-#     token = await authenticate(bot, query.from_user.id)
-#     response = get_my_loads(token=token, page=next_page)
-#     if response["status_code"] == 200:
-#         await send_paginated_load_details(query.message.chat.id, response, next_page)
-#     else:
-#         await query.message.answer("Sizda hali yuklar yo'q")
-
-
-# async def send_paginated_load_details(chat_id, response, current_page):
-#     if response["status_code"] == 200:
-#         loads = response["message"]
-#         num_per_page = 10
-#         start_index = (current_page - 1) * num_per_page
-#         end_index = min(start_index + num_per_page, len(loads))
-#         print(loads)
-#         print(start_index, end_index)
-#         loads_page = loads[start_index:end_index]
-#         message_text = "\n\n".join([str(load) for load in loads_page])
-#         pagination_markup = generate_pagination_buttons(
-#             current_page, len(loads), num_per_page
-#         )
-#         await bot.send_message(
-#             chat_id=chat_id,
-#             text=message_text,
-#             reply_markup=pagination_markup,
-#         )
-#     else:
-#         await bot.send_message(chat_id=chat_id, text="Failed to fetch loads")
-
-
-# def generate_pagination_buttons(current_page, total_count, num_per_page):
-#     total_pages = (total_count + num_per_page - 1) // num_per_page
-#     buttons = []
-#     if current_page > 1:
-#         buttons.append(
-#             types.InlineKeyboardButton(
-#                 text="<< Previous",
-#                 callback_data=f"load_pagination:previous:{current_page}",
-#             )
-#         )
-#     if current_page < total_pages:
-#         buttons.append(
-#             types.InlineKeyboardButton(
-#                 text="Next >>", callback_data=f"load_pagination:next:{current_page}"
-#             )
-#         )
-#     return types.InlineKeyboardMarkup().add(*buttons)
-
-
 async def show_my_loads(query: types.CallbackQuery):
     page = 1
     token = await authenticate(bot, query.from_user.id)
     response = get_my_loads(token=token, page=page)
-    print("Sending paginated response")
     await send_paginated_load_details(query.message.chat.id, response)
 
 
 async def load_pagination_callback(query: types.CallbackQuery):
     action, current_page = query.data.split(":")[1:]
     current_page = int(current_page)
-    print(action)
-    print(current_page)
 
     if action == "next":
         next_page = current_page + 1
@@ -113,25 +41,37 @@ async def send_paginated_load_details(
     loads = response["message"]["results"]
     indices = [load.get("id") for load in loads]
     indices = [index for index in indices if index is not None]
-    message_text = str(loads)
+    message_text = ""
+    print(loads)
+    markup = InlineKeyboardMarkup(row_width=10)
+    butt = []
+    for index, data in enumerate(loads, start=1):
+        message_text += f"{index}. {status[data['load']['status']]} {data['load']['product_name']}\n\n"
+        butt.append(
+            types.InlineKeyboardButton(
+                text=str(index),
+                callback_data=f"load_details:{data['load']['id']}:{data['uuid']}",
+            )
+        )
     pagination_markup = generate_pagination_buttons(
         current_page, response["message"]["previous"], response["message"]["next"]
     )
-
+    markup.add(*butt)
+    markup.add(*pagination_markup)
     if message_id:
         # Update existing message
         await bot.edit_message_text(
             chat_id=chat_id,
             message_id=message_id,
             text=message_text,
-            reply_markup=pagination_markup,
+            reply_markup=markup,
         )
     else:
         # Send new message
         await bot.send_message(
             chat_id=chat_id,
             text=message_text,
-            reply_markup=pagination_markup,
+            reply_markup=markup,
         )
 
 
@@ -151,15 +91,16 @@ def generate_pagination_buttons(current_page, previous, next):
                 text="Next >>", callback_data=f"load_pagination:next:{current_page + 1}"
             )
         )
-    return types.InlineKeyboardMarkup().add(*buttons)
+    return buttons
 
 
 async def load_details_callback(query: types.CallbackQuery):
     callback_data = query.data.split(":")
-    load_id = int(callback_data[-1])
+    print(callback_data)
+    load_id, transaction_id = callback_data[1:]
 
     token = await authenticate(bot, query.from_user.id)
-    load_details = get_one_load_details(token=token, load_id=load_id)
+    load_details = get_one_load_details(token=token, load_id=int(load_id))
     if load_details["status_code"] == 200:
         load_details = load_details["message"]
         message = f"Load ID: {load_details['id']}\n"
@@ -169,7 +110,15 @@ async def load_details_callback(query: types.CallbackQuery):
         message += f"To: {', '.join(load_details['to_location'])}\n"
         message += f"Address: {load_details['address']}\n"
         message += f"Status: {load_details['status']}\n"
-        await bot.send_message(chat_id=query.message.chat.id, text=message)
+        await bot.send_message(
+            chat_id=query.message.chat.id,
+            text=message,
+            reply_markup=(
+                None
+                if load_details["status"] != "process"
+                else successfully_delivered_btn(transaction_id)
+            ),
+        )
     else:
         await query.message.answer("Yuk mavjud emas")
 
