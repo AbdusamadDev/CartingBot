@@ -42,9 +42,7 @@ async def dispatcher_show_all_loads_handler(query: types.CallbackQuery):
         await bot.send_message(
             chat_id=query.message.chat.id,
             text=f"Requested fakely: {response}",
-            reply_markup=get_loads_for_driver(
-                [(i["id"], i["product_name"]) for i in response["results"]]
-            ),
+            reply_markup=get_loads_for_driver([i["id"] for i in response["results"]]),
         )
 
 
@@ -120,5 +118,3 @@ async def request_for_load(query: types.CallbackQuery, state: FSMContext):
         text="Please choose one of the drivers and review the details of the driver.",
         reply_markup=get_driver_buttons(driver_data),
     )
-
-

@@ -1,8 +1,7 @@
 from aiogram.dispatcher import FSMContext
 from aiogram import types
 
-from bot.buttons import get_buttons_by_role, contact_btn
-from bot.states import LoginState, RegistrationState
+from bot.buttons import get_buttons_by_role
 from bot.utils import authenticate
 from bot.conf import bot
 

@@ -34,18 +34,13 @@ async def reject_handler(query: types.CallbackQuery):
 
 
 async def get_notifications_handler(query: types.CallbackQuery):
-    token = get_user_by_telegram_id(query.from_user.id)
-    if token:
-        token = token[2]
+    token = await authenticate(bot, query.from_user.id)
     notifications = get_notifications(token)
     await bot.send_message(query.message.chat.id, text=str(notifications))
 
 
 async def main_menu_callback_handler(query: types.CallbackQuery):
-    token = get_user_by_telegram_id(query.from_user.id)
-    if token:
-        print(token)
-        token = token[2]
+    token = await authenticate(bot, query.from_user.id)
     profile_details = get_profile_details(token)
     print(profile_details)
     a = list(profile_details["message"].keys())[0]
@@ -57,9 +52,7 @@ async def main_menu_callback_handler(query: types.CallbackQuery):
 
 
 async def confirm_handler(query: types.CallbackQuery):
-    token = get_user_by_telegram_id(query.from_user.id)
-    if token:
-        token = token[2]
+    token = await authenticate(bot, query.from_user.id)
     user_type = query.data.split(":")[1]
     transaction_id = query.data.split(":")[-1]
     if user_type == "client":
@@ -77,6 +70,9 @@ async def confirm_handler(query: types.CallbackQuery):
                     text=f"Siz yetkazib berish jarayonini boshlashingiz mumkin, mijoz endigina tasdiqladi va yukni yetkazib berishingizga ruxsat berdi, bajarganingizdan keyin ularga xabar bering va quyidagi `Yakunladim` tugmasini bosing.",
                     reply_markup=successfully_delivered_btn(transaction_id),
                 )
-        await bot.send_message(query.message.chat.id, text=f"Salom bacha {response}")
+        await bot.send_message(
+            query.message.chat.id,
+            text="Yukingizni olishga ruxsat berganingiz haqida haydovchi ogohlantirildi.",
+        )
     elif user_type == "driver":
         pass

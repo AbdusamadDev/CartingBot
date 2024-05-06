@@ -31,6 +31,7 @@ async def authenticate(bot, telegram_id, profile_view=False):
             else:
                 print("Profile view mode is off, just returning token")
                 return token
+        print(profile_details)
     else:
         print("Token does not exist in database")
         if user_exists_in_backend(telegram_id):

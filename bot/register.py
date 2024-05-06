@@ -49,6 +49,7 @@ from bot.roles.driver import (
     finished_delivery_request_to_client,
     driver_to_client_request_handler,
     show_all_loads_for_driver,
+    load_pagination_callback,
     load_details_callback,
     show_my_loads,
 )
@@ -137,10 +138,6 @@ def register_driver_handlers(dp: Dispatcher):
         text_contains="driver_show_load_", callback=show_my_loads
     )
     dp.register_callback_query_handler(
-        text_contains="show_all_driver_loads",
-        callback=dispatcher_show_all_loads_handler,
-    )
-    dp.register_callback_query_handler(
         text="show_all_driver_loads", callback=show_all_loads_for_driver
     )
     dp.register_callback_query_handler(
@@ -153,6 +150,16 @@ def register_driver_handlers(dp: Dispatcher):
     )
     dp.register_callback_query_handler(
         text_contains="decline_request", callback=reject_handler
+    )
+    dp.register_callback_query_handler(
+        load_pagination_callback,
+        text_contains="load_pagination:previous:",
+        state="*",
+    )
+    dp.register_callback_query_handler(
+        load_pagination_callback,
+        text_contains="load_pagination:next:",
+        state="*",
     )
 
 

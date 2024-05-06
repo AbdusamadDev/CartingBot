@@ -94,6 +94,7 @@ def get_loads_button(indices):
 def get_loads_for_driver(indices):
     markup = InlineKeyboardMarkup(row_width=5)
     for index, load_id in enumerate(indices, start=1):
+        print("Load Data: ", load_id)
         markup.add(
             InlineKeyboardButton(
                 text=str(index),

@@ -40,3 +40,7 @@ class LoadDetailsState(StatesGroup):
     loads = State()
     page = State()
     max_length = State()
+
+
+class DriverMyLoadsState(StatesGroup):
+    page = State()

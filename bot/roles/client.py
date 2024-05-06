@@ -200,6 +200,9 @@ async def client_show_my_load_handler(query: types.CallbackQuery, state: FSMCont
     if "Qabul qiluvchining telefon raqami" in query.message.text:
         await query.message.delete()
     if response["status_code"] == 200:
+        if response["message"] == []:
+            await query.message.answer("Sizda hali yuklar yoq.")
+            return
         response = response["message"]
         detail = response[index]
         status = {"active": "🟩", "wait": "🟦", "cancel": "🟥", "process": "🟨"}

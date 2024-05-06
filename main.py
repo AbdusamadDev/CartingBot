@@ -15,7 +15,7 @@ from bot.register import (
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     create_table()
     # clear_database()
     register_registration_handlers(dp)

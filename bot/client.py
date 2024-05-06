@@ -79,13 +79,13 @@ def get_transaction(load_id):
     return {"message": response, "status_code": request.status_code}
 
 
-def get_my_loads(token):
+def get_my_loads(token, page):
     request = requests.get(
-        DOMAIN + "/drivers/loads/personal/",
+        DOMAIN + f"/drivers/loads/personal/?page={page}",
         headers={"Authorization": f"Bearer {token}"},
     )
     response = request.json()
-    return response
+    return {"message": response, "status_code": request.status_code}
 
 
 def dispatcher_get_my_loads(token):
@@ -148,6 +148,98 @@ def fetch_districts_details(token):
             return None
     except requests.RequestException as e:
         return None
+
+
+[
+    {
+        "uuid": "2e20218a-8e37-46e3-b19a-b115c5477a7e",
+        "load": {
+            "receiver_phone_number": "+998991234567",
+            "product_count": 1.0,
+            "date_delivery": "2020-01-01T00:23:00+05:00",
+            "product_name": "noutbuk",
+            "product_info": "gaming",
+            "product_type": "dona",
+            "from_location": ["aa"],
+            "to_location": ["bb"],
+            "address": "yupiter",
+            "status": "wait",
+            "product_image": "http://localhost:8000/media/load_images/18048af4-fa45-45da-bb36-fd983d3cccfb.jpg",
+            "id": 1,
+            "client": {
+                "first_name": None,
+                "last_name": None,
+                "obj_status": "available",
+                "user": {
+                    "phonenumber": "+998940055565",
+                    "user_type": "client",
+                    "first_name": None,
+                    "last_name": None,
+                    "telegram_id": 6634409389,
+                    "id": 1,
+                },
+            },
+        },
+        "created_at": "2024-05-06T12:04:02+05:00",
+        "updated_at": "2024-05-06T12:04:02+05:00",
+        "obj_status": "available",
+        "status": "wait_driver",
+        "review": 0,
+        "driver": {
+            "user": {
+                "phonenumber": "+998990041122",
+                "first_name": None,
+                "last_name": None,
+                "telegram_id": 2003049919,
+            }
+        },
+        "dispatcher": None,
+    },
+    {
+        "uuid": "2e20218a-8537-46e3-b19a-b115c5477a7e",
+        "load": {
+            "receiver_phone_number": "+998940055565",
+            "product_count": 5.0,
+            "date_delivery": "2020-01-01T00:23:00+05:00",
+            "product_name": "Load name 5",
+            "product_info": "Load info 5",
+            "product_type": "m",
+            "from_location": ["aa"],
+            "to_location": ["bb"],
+            "address": "Address 5",
+            "status": "active",
+            "product_image": "http://localhost:8000/media/load_images/8fc21bd3-3ea0-4471-834d-505bca9bce00.jpg",
+            "id": 10,
+            "client": {
+                "first_name": None,
+                "last_name": None,
+                "obj_status": "available",
+                "user": {
+                    "phonenumber": "+998940055565",
+                    "user_type": "client",
+                    "first_name": None,
+                    "last_name": None,
+                    "telegram_id": 6634409389,
+                    "id": 1,
+                },
+            },
+        },
+        "created_at": "2024-05-06T12:04:02+05:00",
+        "updated_at": "2029-02-11T03:44:05+05:00",
+        "obj_status": "available",
+        "status": "finished",
+        "review": 0,
+        "driver": {
+            "user": {
+                "phonenumber": "+998990041122",
+                "first_name": None,
+                "last_name": None,
+                "telegram_id": 2003049919,
+            }
+        },
+        "dispatcher": None,
+    },
+]
 
 
 def get_all_loads_dispatcher(token):
