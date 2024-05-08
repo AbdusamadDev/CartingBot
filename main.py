@@ -5,7 +5,7 @@ from bot.database import create_table, clear_database
 from bot.conf import dp
 from bot.register import (
     register_registration_handlers,
-    register_dispatcher_handlers,
+    # register_dispatcher_handlers,
     register_commands_handlers,
     register_client_handlers,
     register_driver_handlers,
@@ -15,11 +15,11 @@ from bot.register import (
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    clear_database()
+    logging.basicConfig(level=logging.INFO)
     create_table()
+    # clear_database()
     register_registration_handlers(dp)
-    register_dispatcher_handlers(dp)
+    # register_dispatcher_handlers(dp)
     register_commands_handlers(dp)
     register_client_handlers(dp)
     register_global_handlers(dp)

@@ -49,7 +49,10 @@ from bot.roles.driver import (
     finished_delivery_request_to_client,
     driver_to_client_request_handler,
     show_all_loads_for_driver,
+    load_pagination_callback,
+    load_details_callback,
     show_my_loads,
+    load_preview,
 )
 from bot.commands import start_handler
 
@@ -68,12 +71,13 @@ def register_client_handlers(dp: Dispatcher):
 
     # Register callback query handlers for load creation flow
     callback_query_handlers = [
+        ("district", LoadCreationState.district, process_district_callback),
+        ("choice", LoadCreationState.product_type, process_choice_handler),
+        ("confirm_load_splitting_part", None, client_FINISH_processes),
+        ("region:", LoadCreationState.region, process_region_callback),
+        ("retry_add_load", None, process_add_load_callback),
         ("show_my_load", None, client_show_my_load_handler),
         ("add_load", None, process_add_load_callback),
-        ("region:", LoadCreationState.region, process_region_callback),
-        ("choice", LoadCreationState.product_type, process_choice_handler),
-        ("district", LoadCreationState.district, process_district_callback),
-        ("confirm_load_splitting_part", None, client_FINISH_processes),
         (
             "next_to_receiver_phone_number",
             LoadCreationState.district,
@@ -126,14 +130,16 @@ def register_driver_handlers(dp: Dispatcher):
     register handlers that will be invoked by the aiogram event loop.
     """
     dp.register_callback_query_handler(
+        text_contains="load_preview", callback=load_preview
+    )
+    dp.register_callback_query_handler(
+        text_contains="load_details", callback=load_details_callback
+    )
+    dp.register_callback_query_handler(
         text_contains="show_load", callback=show_my_loads
     )
     dp.register_callback_query_handler(
         text_contains="driver_show_load_", callback=show_my_loads
-    )
-    dp.register_callback_query_handler(
-        text_contains="show_all_driver_loads",
-        callback=dispatcher_show_all_loads_handler,
     )
     dp.register_callback_query_handler(
         text="show_all_driver_loads", callback=show_all_loads_for_driver
@@ -143,11 +149,21 @@ def register_driver_handlers(dp: Dispatcher):
         callback=driver_to_client_request_handler,
     )
     dp.register_callback_query_handler(
-        text_contains="driver_successfully_delivered",
+        text_contains="qqq",
         callback=finished_delivery_request_to_client,
     )
     dp.register_callback_query_handler(
         text_contains="decline_request", callback=reject_handler
+    )
+    dp.register_callback_query_handler(
+        load_pagination_callback,
+        text_contains="load_pagination:previous:",
+        state="*",
+    )
+    dp.register_callback_query_handler(
+        load_pagination_callback,
+        text_contains="load_pagination:next:",
+        state="*",
     )
 
 

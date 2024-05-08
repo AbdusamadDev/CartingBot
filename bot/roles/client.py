@@ -1,5 +1,5 @@
 from aiogram.dispatcher import FSMContext
-from bot.states import LoadCreationState
+from bot.states import *
 from bot.conf import bot
 from aiogram import types
 from bot.buttons import *
@@ -10,8 +10,8 @@ import re
 
 
 async def process_add_load_callback(query: types.CallbackQuery, state: FSMContext):
-    await bot.send_message(
-        query.message.chat.id, text="Cool now, Please send your load's picture please!"
+    await query.message.answer(
+        text="Zo'r, endi, iltimos, yukingizning rasmini yuboring!",
     )
     await LoadCreationState.image.set()
 
@@ -36,7 +36,7 @@ async def process_image_handler(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["image"] = photo_url  # Save the photo URL in the state
     await message.answer(
-        "How do you title your load as, please give a name for it..."
+        "Yukingizni qanday nomlaysiz, unga nom bering..."
     )  # Prompt user for the load name
     await LoadCreationState.product_name.set()  # Move to the next state to collect load name
 
@@ -58,7 +58,7 @@ async def process_product_name(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["product_name"] = message.text  # Save the provided load name in the state
     await message.answer(
-        "Okay, please provide a brief description of the load."
+        "Yaxshi, iltimos, yukning qisqacha tavsifini bering."
     )  # Prompt user for more detailed load information
     await LoadCreationState.product_info.set()  # Move to the next state to collect more load information
 
@@ -67,7 +67,7 @@ async def process_product_info(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["product_info"] = message.text
     await message.answer(
-        "What kind of load is your load? Please select following",
+        "Sizning yukingiz qanday yuk? Iltimos, quyidagini tanlang:",
         reply_markup=get_choices_button(),
     )
     await LoadCreationState.product_type.set()
@@ -77,7 +77,7 @@ async def process_choice_handler(query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data["product_type"] = query.data.split(":")[-1]
     await bot.send_message(
-        text="Now please enter the amount of your load, just digits are enough to process...",
+        text="Endi yuk miqdorini kiriting, ishlov berish uchun faqat raqamlar kifoya qiladi...",
         chat_id=query.message.chat.id,
     )
     await LoadCreationState.product_count.set()
@@ -87,12 +87,14 @@ async def process_product_count(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         if not message.text.isdigit():
             await message.answer(
-                "🚫 As it is mentioned, please provide only number of your load(s)."
+                "🚫 Yuqorida aytib o'tilganidek, iltimos, yuklaringizning faqat sonini ko'rsating."
             )
             await LoadCreationState.product_count.set()
             return
         data["product_count"] = int(message.text)
-    await message.answer("Where is your load located? Can you provide its address?")
+    await message.answer(
+        "Sizning yukingiz qayerda joylashgan? Uning manzilini bera olasizmi?"
+    )
     await LoadCreationState.address.set()
 
 
@@ -104,7 +106,7 @@ async def process_region_callback(query: types.CallbackQuery, state: FSMContext)
     )
     btn = get_district_selection_buttons(districts, state_data["end"])
     await query.message.edit_text(
-        text="Now, please provide route for your load to be delivered, choose following regions and districts which helps driver to drive these direction much more easier...",
+        text="Endi, iltimos, yukingizni etkazib berish uchun marshrutni ko'rsating, haydovchiga ushbu yo'nalishda harakatlanishini osonlashtiradigan quyidagi viloyat va tumanlarni tanlang ...",
         reply_markup=btn,
     )
     await LoadCreationState.next()
@@ -118,7 +120,7 @@ async def process_district_callback(query: types.CallbackQuery, state: FSMContex
         regions = fetch_districts_details(token[2])
         btn = regions_btn(regions)
         await query.message.edit_text(
-            f"Which districts of the region should driver drive through?",
+            f"Haydovchi viloyatning qaysi tumanlaridan o'tishi kerak?",
             reply_markup=btn,
         )
         await LoadCreationState.region.set()
@@ -132,7 +134,7 @@ async def process_address_callback(query: types.CallbackQuery, state: FSMContext
     to_location = get_selected_districts(query.message.reply_markup)
     await state.update_data(to_location=to_location)
     await query.message.answer(
-        "Almost there, please finalize process by entering a phone number of load reciever in this format: +998 (xx) xxx-xx-xx [e.g `+998991234567`]"
+        "Deyarli tugattik. Iltimos, ushbu formatdagi yuk qabul qiluvchining telefon raqamini kiritish orqali jarayonni yakunlang: +998 (xx) xxx-xx-xx [e.g `+998991234567`]"
     )
     await LoadCreationState.receiver_phone_number.set()
 
@@ -146,7 +148,7 @@ async def process_address(message: types.Message, state: FSMContext):
         data["regions"] = regions
         data["end"] = False
     btn = regions_btn(regions)
-    await message.answer("Please select region:", reply_markup=btn)
+    await message.answer("Iltimos, viloyatlarni tanlang:", reply_markup=btn)
     await LoadCreationState.region.set()
 
 
@@ -155,20 +157,18 @@ async def process_receiver_phone_number(message: types.Message, state: FSMContex
     async with state.proxy() as data:
         data["receiver_phone_number"] = message.text
     await message.answer(
-        "Please provide the delivery date in this format: (e.g., YYYY-MM-DD):"
+        "Iltimos, ushbu formatda etkazib berish sanasini ko'rsating: (e.g., YYYY-MM-DD):"
     )
     await LoadCreationState.date_delivery.set()
 
 
 # Handler to gather delivery date
 async def process_delivery_date(message: types.Message, state: FSMContext):
-    token = get_user_by_telegram_id(message.from_user.id)
-    if token:
-        token = token[2]
+    token = await authenticate(bot, message.from_user.id)
     async with state.proxy() as data:
         if not re.match(r"^\d{4}-\d{2}-\d{2}$", message.text):
             await message.answer(
-                "🚫 Oops! This is not valid date, please enter valid data in this format: YYYY-MM-DD."
+                "🚫 Bu sana yaroqsiz, iltimos, ushbu formatda yaroqli maʼlumotlarni kiriting: YYYY-MM-DD."
             )
             await LoadCreationState.date_delivery.set()
             return
@@ -178,36 +178,80 @@ async def process_delivery_date(message: types.Message, state: FSMContext):
         response = client_add_load(
             data=data.as_dict(), token=token, image_blob=image_blob
         )
+        if response["status_code"] != 201:
+            await message.answer(
+                "🚫 Sizning yukingiz qabul qilinmadi. Iltimos, qayta urinib ko'ring.",
+                reply_markup=load_creation_retry_btn(),
+            )
+            await LoadCreationState.image.set()
+            return
     await message.answer(
-        # f"Cool, your load {data['product_name']} was successfully added!",
-        str(response),
+        "✅ Sizning yukingiz muvaffaqiyatli qo'shildi!",
         reply_markup=take_me_back_markup,
     )
     await state.finish()
 
 
-async def client_show_my_load_handler(query: types.CallbackQuery):
-    token = get_user_by_telegram_id(query.from_user.id)
-    if token:
-        token = token[2]
+async def client_show_my_load_handler(query: types.CallbackQuery, state: FSMContext):
+    print(query.data)
+    index = int(query.data.split(":")[-1])
+    token = await authenticate(bot, query.from_user.id)
     response = get_client_personal_loads(token)
-    await bot.send_message(
-        chat_id=query.message.chat.id, text=f"Requested fakely: {response}"
-    )
+    if "Qabul qiluvchining telefon raqami" in query.message.text:
+        await query.message.delete()
+    if response["status_code"] == 200:
+        if response["message"] == []:
+            await query.message.answer("Sizda hali yuklar yoq.")
+            return
+        response = response["message"]
+        detail = response[index]
+        
+        message_list = [
+            f"\n\n ☎️ Qabul qiluvchining telefon raqami: {detail['receiver_phone_number']}",
+            f"\n\n 🔢 Miqdori: {detail['product_count']}",
+            f"\n\n 🏷 Nomi: {detail['product_name']}",
+            f"\n\n 📐 Turi: {detail['product_type']}",
+            f"\n\n 🖼 Rasm: {detail['product_image']}",
+            f"\n\n 📍 Manzili: {detail['address']}",
+            f"\n\n {status[detail['status']]} Holati: {detail['status']}",
+            f"\n\n 📅 Qabul qilish sanasi: {detail['date_delivery']}",
+            "Yukning yo`nalishi: "
+            + "".join([f"📍 {i} --> " for i in detail["from_location"]])[:-4],
+        ]
+    async with state.proxy() as data:
+        try:
+            page = int(data.get("page", 0))
+            max_length = int(data.get("max_length", len(response) - 1))
+            if page > max_length:
+                page = 0
+            data["page"] = page + 1
+            btns = [
+                loads_button(page, "▶️ Keyingisi: " + response[page]["product_name"]),
+                InlineKeyboardButton(text="Asosiy menyu", callback_data="main_menu"),
+            ]
+            btn = InlineKeyboardMarkup(row_width=1)
+            btn.add(*btns)
+        except KeyError:
+            await query.message.answer("Sizda hali yuklar yoq.")
+            return
+        await bot.send_message(
+            chat_id=query.message.chat.id,
+            text=f"Batafsil: \n\n" + "".join(message_list),
+            reply_markup=btn,
+        )
 
 
 async def client_FINISH_processes(query: types.CallbackQuery):
     transaction_uuid = query.data.split("splitting_part")[-1]
-    token = get_user_by_telegram_id(query.from_user.id)
-    print(9999999999999999999999999999999999999999999, transaction_uuid)
-    if token:
-        token = token[2]
+    token = await authenticate(bot=bot, telegram_id=query.from_user.id)
     response = client_FINISH_all_processes_request(
         transaction_id=transaction_uuid,
         token=token,
         action="finish_client",
         status="yes",
     )
-    await bot.send_message(query.from_user.id, text=str(response))
-
-
+    if response["status_code"] == 200:
+        text = "✅ Muvaffaqiyatli tasdiqlandi!"
+    else:
+        text = "🚫 Xatolik yuz berdi, tugmachani qayta bosing!"
+    await query.message.answer(text=text)

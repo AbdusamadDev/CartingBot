@@ -42,16 +42,13 @@ async def dispatcher_show_all_loads_handler(query: types.CallbackQuery):
         await bot.send_message(
             chat_id=query.message.chat.id,
             text=f"Requested fakely: {response}",
-            reply_markup=get_loads_for_driver(
-                [(i["id"], i["product_name"]) for i in response["results"]]
-            ),
+            reply_markup=get_loads_for_driver([i["id"] for i in response["results"]]),
         )
 
 
 async def dispatcher_request_to_driver_handler(
     query: types.CallbackQuery, state: FSMContext
 ):
-    print("[INFO] Requesting to driver")
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
         token = token[2]
@@ -65,7 +62,6 @@ async def dispatcher_request_to_driver_handler(
 
 
 async def ask_for_which_load_handler(query: types.CallbackQuery, state: FSMContext):
-    print("[INFO] Choosing load from loads list")
     driver_id = query.data.split("_")[-1]
     token = get_user_by_telegram_id(query.from_user.id)
     if token:
@@ -122,5 +118,3 @@ async def request_for_load(query: types.CallbackQuery, state: FSMContext):
         text="Please choose one of the drivers and review the details of the driver.",
         reply_markup=get_driver_buttons(driver_data),
     )
-
-
