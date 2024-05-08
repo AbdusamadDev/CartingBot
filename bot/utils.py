@@ -7,6 +7,16 @@ from bot.buttons import contact_btn
 from bot.states import *
 
 
+async def prompt_registration(bot, telegram_id, exception):
+    await bot.send_message(telegram_id, "👋")
+    await exception(
+        text="Carting Logistics Service botiga xush kelibsiz! Iltimos ro'yxatdan o'tish uchun telefon raqamingizni quyidagi ko'rinishda kiriting: +998 (xx) xxx-xx-xx [e.g +998941234567]",
+        reply_markup=contact_btn,
+    )
+    await RegistrationState.phonenumber.set()
+    return
+
+
 async def authenticate(bot, telegram_id, profile_view=False):
     token = get_user_by_telegram_id(telegram_id)
     exception = lambda text, reply_markup=None: bot.send_message(
@@ -16,6 +26,9 @@ async def authenticate(bot, telegram_id, profile_view=False):
         print("Token exists")
         token = token[2]
         profile_details = get_profile_details(token)
+        if not user_exists_in_backend(telegram_id):
+            await prompt_registration(bot, telegram_id, exception)
+            return
         if profile_details["status_code"] == 401:
             print("Token is invalid")
             await exception(
@@ -43,13 +56,7 @@ async def authenticate(bot, telegram_id, profile_view=False):
             return
         else:
             print("User does not exist in backend")
-            await bot.send_message(telegram_id, "👋")
-            await exception(
-                text="Carting Logistics Service botiga xush kelibsiz! Iltimos ro'yxatdan o'tish uchun telefon raqamingizni quyidagi ko'rinishda kiriting: +998 (xx) xxx-xx-xx [e.g +998941234567]",
-                reply_markup=contact_btn,
-            )
-            await RegistrationState.phonenumber.set()
-            return
+            await prompt_registration(bot, telegram_id, exception)
     return
 
 

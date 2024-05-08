@@ -27,8 +27,10 @@ async def process_phonenumber(message: types.Message, state: FSMContext):
 async def share_number_for_registration(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["phonenumber"] = message.contact.phone_number
-    await message.answer(f"Parolingizni kiriting.")
-    await RegistrationState.password.set()
+    await message.answer(
+        f"4 ta raqamli faollashtirish kodi telefon raqamingizga yuborildi: {message.text}, faollashtirish kodini kiriting: "
+    )
+    await RegistrationState.sms_code.set()
 
 
 async def process_sms_code(message: types.Message, state: FSMContext):
@@ -46,25 +48,6 @@ async def process_sms_code(message: types.Message, state: FSMContext):
             "🚫 Activatsiya kodi noto'g'ri. Iltimos qayta urinib ko'ring: Activatsiya kodi: (1111)"
         )
         await RegistrationState.sms_code.set()
-
-
-async def handle_contact(message: types.Message, state: FSMContext):
-    contact = message.contact
-    if (
-        contact.user_id == message.from_user.id
-    ):  # Ensuring the contact belongs to the sender
-        phonenumber = contact.phone_number
-        async with state.proxy() as data:
-            data["phonenumber"] = phonenumber
-        await message.answer(
-            f"4 ta raqamli faollashtirish kodi telefon raqamingizga yuborildi: {message.text}, faollashtirish kodini kiriting: "
-        )
-        await RegistrationState.sms_code.set()
-    else:
-        await message.answer(
-            "Iltimos o'zingizni telefon raqamingizni kiriting.",
-            reply_markup=contact_btn,
-        )
 
 
 async def process_role_callback(query: types.CallbackQuery, state: FSMContext):
